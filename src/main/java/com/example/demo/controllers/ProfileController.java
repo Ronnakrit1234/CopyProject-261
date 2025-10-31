@@ -6,7 +6,6 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.*;
 
 @RestController
@@ -20,7 +19,7 @@ public class ProfileController {
     @PutMapping("/update")
     public ResponseEntity<?> updateProfile(
             @RequestBody @Valid UserProfile updatedProfile,
-            @RequestHeader("username") String username // จำลองการตรวจสอบ session
+            @RequestHeader("username") String username // จำลอง session
     ) {
         if (username == null || username.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -35,7 +34,7 @@ public class ProfileController {
 
         UserProfile existing = optionalUser.get();
 
-        // Validation (ความยาว)
+        // Validation manual
         if (updatedProfile.getDisplayName() == null || updatedProfile.getDisplayName().length() < 3) {
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Display name must be at least 3 characters"));
@@ -51,12 +50,13 @@ public class ProfileController {
                     .body(Map.of("error", "Bio too long"));
         }
 
-        // Update data
+        // ✅ Update data
         existing.setDisplayName(updatedProfile.getDisplayName());
         existing.setBio(updatedProfile.getBio());
         userRepo.save(existing);
 
         Map<String, Object> response = new HashMap<>();
+        response.put("status", true);
         response.put("message", "Profile updated successfully");
         response.put("profile", existing);
 
