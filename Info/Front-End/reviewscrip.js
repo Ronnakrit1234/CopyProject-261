@@ -4,7 +4,7 @@
 */
 ;(() => {
   const LS_KEY = 'courseReviews'
-  const LIMIT = 220; // ✅ จำกัดความยาวรีวิวเพื่อไม่ให้ทะลุการ์ด
+  const LIMIT = 220 // ✅ จำกัดความยาวรีวิว
 
   // ---------- helpers ----------
   const qs  = (sel, el=document) => el.querySelector(sel)
@@ -36,36 +36,23 @@
   }
 
   function getRating(){
-    const hidden = qs('#ratingValue,input[name="ratingValue"][type="hidden"],input[name="rating"][type="number"]')
-    if (hidden && hidden.value) {
-      const v = Number(hidden.value); if (v>=1 && v<=5) return v
-    }
-    const radio = qs('input[name="rating"]:checked')
-    if (radio) {
-      const v = Number(radio.value); if (v>=1 && v<=5) return v
-    }
-    const activeBtn = qs('[data-rating].is-active, [data-rating].selected, [data-rating][aria-pressed="true"]')
-                    || qs('.rating .star-box.is-active, .rating .star-box.selected')
+    const activeBtn = qs('[data-rating].is-active, [data-rating].selected')
     if (activeBtn) {
       const v = Number(activeBtn.dataset.rating || parseRatingFromText(activeBtn.textContent))
       if (v>=1 && v<=5) return v
     }
-    return 3
+    return NaN
   }
 
   function bindRatingClicks(){
-    const container = qs('#ratingBox') || qs('#ratingGroup') || qs('.rating') || document
+    const container = qs('#ratingBox')
     container.addEventListener('click', (e)=>{
-      const btn = e.target.closest('[data-rating], .rating .star-box, .rating .chip')
+      const btn = e.target.closest('[data-rating]')
       if (!btn) return
       const val = Number(btn.dataset.rating || parseRatingFromText(btn.textContent))
       if (!(val>=1 && val<=5)) return
-      qsa('[data-rating], .rating .star-box, .rating .chip', container)
-        .forEach(el => { el.classList.remove('is-active','selected'); el.removeAttribute('aria-pressed') })
+      qsa('[data-rating]', container).forEach(el => el.classList.remove('is-active','selected'))
       btn.classList.add('is-active','selected')
-      btn.setAttribute('aria-pressed','true')
-      const hv = qs('#ratingValue') || qs('input[name="ratingValue"][type="hidden"]')
-      if (hv) hv.value = String(val)
     })
   }
 
@@ -120,7 +107,6 @@
   function setupTextLimiter(){
     const ta = qs('#reviewText')
     const fb = qs('#charCount')
-    const submitBtn = qs('button[type="submit"], #btnSubmit')
 
     const render = () => {
       const len = (ta?.value || '').length
@@ -129,13 +115,10 @@
       fb.textContent = `${len}/${LIMIT} — ${ok ? 'OK' : 'Too long'}`
       fb.classList.toggle('ok', ok)
       fb.classList.toggle('too-long', !ok)
-      if (submitBtn) submitBtn.disabled = !ok
     }
 
-    // initial text
-    if (fb) { fb.textContent = `0/${LIMIT}` }
+    if (fb) fb.textContent = `0/${LIMIT}`
     render()
-
     ta?.addEventListener('input', render)
   }
 
@@ -143,28 +126,39 @@
   function saveReview(ev){
     ev?.preventDefault?.()
 
-    const course    = getVal(['#subject', '#course', 'input[name="subject"]', 'input[name="course"]', '#Subject'])
-    const professor = getVal(['#professor', 'input[name="professor"]', '#teacher', 'input[name="teacher"]'])
-    const ta        = qs('#reviewText')
-    let comment     = getVal(['#reviewText','#review', '#comment', 'textarea[name="review"]', 'textarea[name="comment"]'])
-    if (!comment) {
-      const t = qs('textarea'); comment = t ? String(t.value).trim() : ''
+    const form = ev.target.closest('form') || qs('form')
+
+    // ✅ ตรวจว่า required ผ่านไหม
+    if (!form.checkValidity()) {
+      form.reportValidity() // ให้ browser เตือน "Please fill out this field."
+      return
     }
 
-    // ✅ กันยาวเกิน: ไม่ให้บันทึกถ้าเกิน และ focus ให้แก้
+    const course    = getVal(['#subject'])
+    const professor = getVal(['#professor'])
+    const ta        = qs('#reviewText')
+    const comment   = ta?.value.trim() || ''
+
+    // ✅ ความยาวเกิน limit → alert
     if (comment.length > LIMIT) {
+      alert(`❌ รีวิวของคุณยาวเกิน ${LIMIT} ตัวอักษร กรุณาแก้ไขก่อนส่ง`)
       ta?.focus()
       return
     }
-    // กัน edge case: trim ให้ชัวร์ก่อนเซฟ
-    comment = comment.slice(0, LIMIT)
+
+    // ✅ ต้องเลือก rating
+    const rating = getRating()
+    if (!(rating >= 1 && rating <= 5)) {
+      alert("⭐ กรุณาเลือก Rating ก่อนส่งรีวิวครับ")
+      return
+    }
 
     const row = {
       id: rid(),
       course: course || 'Untitled',
       professor: professor || '',
-      rating: Math.max(1, Math.min(5, Number(getRating())||3)),
-      comment: comment || '',
+      rating: rating,
+      comment: comment.slice(0, LIMIT),
       createdAt: Date.now(),
       author: { name: getAuthorName(), avatar: getAvatar() }
     }
@@ -173,7 +167,8 @@
     list.push(row)
     writeLS(list)
 
-    try{ window.location.href = 'dashboard.html' }catch{}
+    alert("✅ ขอบคุณสำหรับการรีวิวของคุณ!")
+    try { window.location.href = 'dashboard.html' } catch {}
   }
 
   // ---------- INIT ----------
@@ -183,13 +178,14 @@
     bindAuthorModeToggle()
     setupTextLimiter()
 
-    // bind ปุ่ม Submit + กันพลาด submit form
-    const form = qs('form') || document
-    const submitBtn = qs('button[type="submit"], #btnSubmit')
-    submitBtn?.addEventListener('click', saveReview)
-    if (form && form.tagName === 'FORM') form.addEventListener('submit', saveReview)
+    const form = qs('form')
+    const submitBtn = qs('#btnSubmit')
 
-    // ✅ ปุ่ม Cancel ให้ย้อนกลับ dashboard โดยไม่บันทึก
+    // ✅ ผูก event ปุ่ม submit
+    submitBtn?.addEventListener('click', saveReview)
+    form?.addEventListener('submit', saveReview)
+
+    // ✅ ปุ่ม cancel
     const cancelBtn = qs('#btnCancel')
     cancelBtn?.addEventListener('click', (e)=>{
       e.preventDefault()
