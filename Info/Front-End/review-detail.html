@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CSTU Pantip — Review Detail</title>
+  <link rel="stylesheet" href="dashboard-style.css" />
+  <link rel="stylesheet" href="review-detail.css" />
+</head>
+
+<body class="page">
+  <!-- Sidebar (เหมือน dashboard) -->
+  <aside class="sidebar sidebar--orange">
+    <div class="sidebar__section">
+      <a href="dashboard.html" class="logo logo--img">
+        <img src="dasboardSource/darkpanthip.png" alt="CSTU Pantip" class="brand-img" />
+      </a>
+      <nav class="nav">
+        <a class="nav__link is-active" href="dashboard.html"><span>🏠</span> overview</a>
+        <a class="nav__link" href="review.html"><span>📝</span> Write Review +</a>
+        <a class="nav__link" href="profile.html"><span>👤</span> Profile</a>
+        <a class="nav__link" href="#"><span>⭐</span> Review</a>
+        <a class="nav__link" href="history.html"><span>🕓</span> History</a>
+      </nav>
+    </div>
+
+    <div class="sidebar__section">
+      <div class="avatar"><span class="avatar__icon">🕵️</span></div>
+      <a class="logout" href="login.html">Log-out</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <header class="toolbar">
+      <div class="toolbar__left">
+        <button class="btn btn--circle" onclick="window.history.back()">‹</button>
+        <h1 class="title">Review Detail</h1>
+      </div>
+      <div class="toolbar__right">
+        <div class="search">
+          <input type="text" placeholder="Search..." disabled />
+        </div>
+      </div>
+    </header>
+
+    <div class="frame-box-detail">
+  <div class="box-detail">
+    <div class="box-content">
+      <div class="left-side">
+        <div class="stars">⭐ ⭐ ⭐ ⭐ ☆</div>
+        <div class="rating-number">4/5</div>
+        <p class="review-text">
+          This course was incredibly challenging, covering complex iteration.
+          Prof. Somsak explains clearly, but homework load is heavy. Expect sling.
+          However, I learned a tremendous amount and highly recommend if can handle
+          the workload!
+        </p>
+        <div class="footer-buttons">
+          <button>💬 Helpful (7)</button>
+          <button>🙃 Not Helpful (2)</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="right-side">
+        <div class="comment-input">
+          <input type="text" placeholder="Add a comment..." />
+          <button>submit</button>
+        </div>
+
+        <div class="comment-item">
+          <img src="avatar/avatar1.jpg" alt="User">
+          <div class="comment-body">
+            <p class="name">Johnny Watson</p>
+            <p class="text">Great insight, thanks!</p>
+            <p class="time">1 hours ago</p>
+          </div>
+        </div>
+
+        <div class="comment-item">
+          <img src="avatar/avatar2.jpg" alt="User">
+          <div class="comment-body">
+            <p class="name">Ammy Sean</p>
+            <p class="text">OMGGGG</p>
+            <p class="time">13 hours ago</p>
+          </div>
+        </div>
+
+        <div class="comment-item">
+          <img src="avatar/avatar3.jpg" alt="User">
+          <div class="comment-body">
+            <p class="name">Myria Mars</p>
+            <p class="text">Good</p>
+            <p class="time">22 hours ago</p>
+          </div>
+        </div>
+
+        <div class="comment-item">
+          <img src="avatar/avatar4.jpg" alt="User">
+          <div class="comment-body">
+            <p class="name">Peter Patt</p>
+            <p class="text">Wow :)</p>
+            <p class="time">1 day ago</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+  </main>
+
+  <script src="review-detail.js"></script>
+</body>
+</html>
