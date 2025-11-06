@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSTU Pantip — Review History</title>
+  <link rel="stylesheet" href="dashboard-style.css">
+  <link rel="stylesheet" href="history-style.css">
+</head>
+
+<body class="page">
+  <!-- Sidebar -->
+  <aside class="sidebar sidebar--orange">
+    <div class="sidebar__section">
+      <a href="dashboard.html" class="logo logo--img">
+        <img src="dasboardSource/darkpanthip.png" alt="CSTU Pantip" class="brand-img" />
+      </a>
+      <nav class="nav">
+        <a class="nav__link" href="dashboard.html"><span>🏠</span> overview</a>
+        <a class="nav__link" href="review.html"><span>📝</span> Write Review +</a>
+        <a class="nav__link" href="profile.html"><span>👤</span> Profile</a>
+        <a class="nav__link is-active" href="history.html"><span>🕓</span> History</a>
+      </nav>
+    </div>
+
+    <div class="sidebar__section">
+      <div class="avatar"><span class="avatar__icon">🕵️</span></div>
+      <a class="logout" href="login.html">Log-out</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <header class="toolbar">
+      <div class="toolbar__left">
+        <button class="btn btn--circle" onclick="window.history.back()">‹</button>
+        <h1 class="title">Review History</h1>
+      </div>
+    </header>
+
+    <section class="history-section">
+      <div class="user-header">
+        <img src="Avatar/Anonymous.png" class="user-avatar" alt="user">
+        <span class="user-name">User: <strong id="username">Anonymous</strong></span>
+      </div>
+
+      <div id="historyList" class="history-list"></div>
+    </section>
+  </main>
+
+  <script src="history-script.js"></script>
+</body>
+</html>
