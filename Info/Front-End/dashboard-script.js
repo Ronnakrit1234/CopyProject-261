@@ -127,11 +127,11 @@
   const metaRight = `${formatDate(r.createdAt)}`
   const profText = `Professor: ${escapeHTML(r.professor || '-')}`
 
-  // ใช้ avatar จาก review (ถ้าไม่มีจะไม่แสดง)
-  const avatarSrc = (r?.author?.avatar || '').trim()
-  const avatarHTML = avatarSrc
-    ? `<img class="card__avatar" src="${escapeHTML(avatarSrc)}" alt="reviewer avatar">`
-    : ''
+  // ใช้ avatar จาก review (ถ้าไม่มีจะใช้ anonymous แทน)
+const defaultAvatar = 'Info/Front-End/Avatar/Anonymous.png' // ใส่ path รูป default ของคุณ
+const avatarSrc = (r?.author?.avatar || '').trim() || defaultAvatar
+const avatarHTML = `<img class="card__avatar" src="${escapeHTML(avatarSrc)}" alt="reviewer avatar">`
+
 
   // เนื้อหารีวิว
   const body = r.comment

@@ -6,18 +6,23 @@
   <title>CSTU Pantip — Dashboard</title>
   <link rel="stylesheet" href="dashboard-style.css" />
 </head>
+
 <body class="page">
   <!-- Sidebar (light orange/yellow) -->
   <aside class="sidebar sidebar--orange">
     <div class="sidebar__section">
-      <!-- ใช้โลโก้โทนเข้ากับหน้า login (สว่าง) -->
+      <!-- โลโก้ -->
       <a href="dashboard.html" class="logo logo--img" aria-label="CSTU Pantip">
         <img src="dasboardSource/darkpanthip.png" alt="CSTU Pantip logo" class="brand-img">
       </a>
 
+      <!-- Navigation Links -->
       <nav class="nav">
-        <a class="nav__link is-active" href="#"><span>🏠</span> overview</a>
-        <a class="nav__link" href="#" id="linkWrite"><span>📝</span> write review</a>
+        <a class="nav__link is-active" href="dashboard.html"><span>🏠</span> overview</a>
+        <a class="nav__link" href="review.html"><span>📝</span> Write Review +</a>
+        <a class="nav__link" href="profile.html"><span>👤</span> Profile</a>
+        <a class="nav__link" href="#"><span>⭐</span> Review</a>
+        <a class="nav__link" href="history.html"><span>🕓</span> History</a>
       </nav>
     </div>
 
@@ -72,8 +77,21 @@
   <script src="dashboard-script.js"></script>
   <script>
     CSTU.initDashboard();
+
+    // เขียนรีวิว
     document.getElementById('writeCTA2')?.addEventListener('click', (e)=>{
-      e.preventDefault(); window.location.href='review.html';
+      e.preventDefault();
+      window.location.href='write.html';
+    });
+
+    // ทำให้ลิงก์ active ตามหน้าปัจจุบัน
+    const currentPage = window.location.pathname.split("/").pop();
+    document.querySelectorAll('.nav__link').forEach(link => {
+      if (link.getAttribute('href') === currentPage) {
+        link.classList.add('is-active');
+      } else {
+        link.classList.remove('is-active');
+      }
     });
   </script>
 </body>
