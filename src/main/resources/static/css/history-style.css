@@ -1,0 +1,74 @@
+.history-section {
+  padding: 20px 40px;
+}
+
+.user-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* card */
+.history-card {
+  background: #fffefb;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 16px 20px;
+}
+
+.history-card .top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.history-card .review-text {
+  font-size: 15px;
+  color: #333;
+  margin: 10px 0 15px;
+  line-height: 1.5;
+}
+
+.history-card .bottom {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: #333;
+}
+
+.bottom .footer-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.footer-buttons button {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.2s;
+}
+
+.footer-buttons button:hover {
+  background: #ffe08a;
+}

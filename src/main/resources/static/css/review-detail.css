@@ -1,0 +1,224 @@
+/* ===== พื้นหลังและ layout หลักของหน้า ===== */
+.frame-box-detail {
+  display: flex;
+  justify-content: center;       /* จัดให้อยู่ตรงกลางแนวนอน */
+  align-items: flex-start;       /* ให้อยู่ด้านบนของ viewport */
+  min-height: 100vh;             /* ความสูงเต็มหน้าจอ */
+  padding: 60px 20px 140px;      /* เว้นระยะบน-ล่าง */
+  background: linear-gradient(180deg, #fff9ee 0%, #fff3d6 40%, #fff8e9 100%);
+  box-sizing: border-box;
+  overflow-y: auto;              /* เผื่อหน้ารีวิวยาว */
+}
+
+/* ===== กล่องรีวิวหลัก ===== */
+.box-detail {
+  width: 1000px;
+  background: #fffefb;
+  border-radius: 18px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== หัวกล่องสีส้ม ===== */
+.box-detail::before {
+  content: "";
+  display: block;
+  height: 80px;
+  width: 100%;
+  background: linear-gradient(90deg, #ffb347, #ffcc33);
+}
+
+/* ===== เนื้อหาภายในกล่อง ===== */
+.box-content {
+  padding: 30px 40px;
+  display: flex;
+  gap: 30px;
+  height: 500px; /* ความสูงคงที่เพื่อให้ขวา scroll ได้ */
+  box-sizing: border-box;
+}
+
+/* ===== ซ้าย–ขวา ===== */
+.left-side {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ===== ฝั่งขวา ===== */
+.right-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-right: 10px;
+}
+
+/* ✅ ให้รายการคอมเมนต์ scroll ได้ */
+#commentList {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 10px;
+}
+
+/* scrollbar สวย ๆ */
+.right-side::-webkit-scrollbar {
+  width: 8px;
+}
+.right-side::-webkit-scrollbar-thumb {
+  background-color: #ffc55c;
+  border-radius: 8px;
+}
+.right-side::-webkit-scrollbar-thumb:hover {
+  background-color: #ffae00;
+}
+
+.divider {
+  width: 2px;
+  background-color: #ddd;
+  opacity: 0.6;
+}
+
+/* ===== ดาวและคะแนน ===== */
+.stars {
+  color: #ffb700;
+  font-size: 22px;
+  letter-spacing: 2px;
+}
+
+.rating-number {
+  font-size: 36px;
+  font-weight: 700;
+  color: #ff8a1f;
+  margin: 10px 0 20px;
+}
+
+/* ===== เนื้อหารีวิว ===== */
+.review-text {
+  font-size: 15px;
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+/* ===== ปุ่ม Helpful / Not Helpful ===== */
+.footer-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.footer-buttons button {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.footer-buttons button:hover {
+  background: #ffd057;
+}
+
+/* ===== ส่วน comment ===== */
+/* ✅ ให้ช่องพิมพ์คอมเมนต์ติดล่าง */
+.comment-input {
+  display: flex;
+  gap: 10px;
+  position: sticky;
+  bottom: 0;
+  background: #fffefb;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  border-top: 1px solid #eee;
+  z-index: 10;
+}
+
+/* ช่อง input + ปุ่ม */
+.comment-input input {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+
+.comment-input button {
+  background: #ffb347;
+  border: none;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 3px 6px rgba(255, 138, 31, 0.3);
+  transition: 0.2s;
+}
+
+.comment-input button:hover {
+  background: #ff9900;
+}
+
+/* ===== แต่ละ comment ===== */
+.comment-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.comment-item img {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.comment-body {
+  background: #fff7ee;
+  border-radius: 10px;
+  padding: 8px 12px;
+  flex: 1;
+}
+
+.comment-body .name {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.comment-body .text {
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.comment-body .time {
+  font-size: 12px;
+  color: #888;
+}
+
+/* ===== Responsive (มือถือ / จอแคบ) ===== */
+@media (max-width: 900px) {
+  .box-detail {
+    width: 95%;
+  }
+
+  .box-content {
+    flex-direction: column;
+    gap: 20px;
+    height: auto;
+  }
+
+  .divider {
+    display: none;
+  }
+
+  .right-side {
+    overflow-y: visible;
+    max-height: none;
+  }
+
+  .frame-box-detail {
+    padding: 30px 10px 100px;
+  }
+}
