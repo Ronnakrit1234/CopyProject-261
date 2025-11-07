@@ -1,6 +1,9 @@
 /* CSTU Pantip — Review form saver (writes to localStorage "courseReviews")
    Schema ที่ Dashboard อ่าน:
-   { id, course, professor, rating(1..5), comment, createdAt, author:{name,avatar} }
+   {
+     id, course, professor, rating(1..5), comment, createdAt,
+     author:{ username, name, avatar }
+   }
 */
 ;(() => {
   const LS_KEY = 'courseReviews'
@@ -51,6 +54,7 @@
 
   function bindRatingClicks() {
     const container = qs('#ratingBox')
+    if (!container) return
     container.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-rating]')
       if (!btn) return
@@ -81,43 +85,10 @@
     return el ? el.getAttribute('src') || '' : qs('#avatarPreview')?.getAttribute('src') || ''
   }
 
-  // ---------- author mode ----------
-  function getAuthorName() {
-    const isProfile =
-      qs('#profileMode')?.classList.contains('active') ||
-      qs('#profileMode')?.getAttribute('aria-pressed') === 'true'
-    if (isProfile) {
-      return getVal(['#displayName', 'input[name="displayName"]']) || 'profile'
-    }
-    return 'anonymous'
-  }
-
-  function bindAuthorModeToggle() {
-    const profBtn = qs('#profileMode')
-    const anonBtn = qs('#anonymousMode')
-    if (!profBtn || !anonBtn) return
-    const setActive = (mode) => {
-      if (mode === 'profile') {
-        profBtn.classList.add('active')
-        profBtn.setAttribute('aria-pressed', 'true')
-        anonBtn.classList.remove('active')
-        anonBtn.setAttribute('aria-pressed', 'false')
-      } else {
-        anonBtn.classList.add('active')
-        anonBtn.setAttribute('aria-pressed', 'true')
-        profBtn.classList.remove('active')
-        profBtn.setAttribute('aria-pressed', 'false')
-      }
-    }
-    profBtn.addEventListener('click', () => setActive('profile'))
-    anonBtn.addEventListener('click', () => setActive('anonymous'))
-  }
-
   // ---------- text limit feedback ----------
   function setupTextLimiter() {
     const ta = qs('#reviewText')
     const fb = qs('#charCount')
-
     const render = () => {
       const len = (ta?.value || '').length
       if (!fb) return
@@ -126,7 +97,6 @@
       fb.classList.toggle('ok', ok)
       fb.classList.toggle('too-long', !ok)
     }
-
     if (fb) fb.textContent = `0/${LIMIT}`
     render()
     ta?.addEventListener('input', render)
@@ -137,10 +107,16 @@
     ev?.preventDefault?.()
 
     const form = ev.target.closest('form') || qs('form')
-
-    // ✅ ตรวจว่า required ผ่านไหม
     if (!form.checkValidity()) {
-      form.reportValidity() // ให้ browser เตือน "Please fill out this field."
+      form.reportValidity()
+      return
+    }
+
+    // ✅ ดึงข้อมูลผู้ใช้จาก TU API (เก็บใน localStorage)
+    const userData = JSON.parse(localStorage.getItem('studentData') || '{}')
+    if (!userData.username) {
+      alert('กรุณาเข้าสู่ระบบก่อน')
+      window.location.href = '/login'
       return
     }
 
@@ -149,20 +125,19 @@
     const ta = qs('#reviewText')
     const comment = ta?.value.trim() || ''
 
-    // ✅ ความยาวเกิน limit → alert
     if (comment.length > LIMIT) {
       alert(`❌ รีวิวของคุณยาวเกิน ${LIMIT} ตัวอักษร กรุณาแก้ไขก่อนส่ง`)
       ta?.focus()
       return
     }
 
-    // ✅ ต้องเลือก rating
     const rating = getRating()
     if (!(rating >= 1 && rating <= 5)) {
       alert('⭐ กรุณาเลือก Rating ก่อนส่งรีวิวครับ')
       return
     }
 
+    // ✅ เพิ่มข้อมูลผู้ใช้เข้าไปในรีวิว
     const row = {
       id: rid(),
       course: course || 'Untitled',
@@ -170,7 +145,11 @@
       rating: rating,
       comment: comment.slice(0, LIMIT),
       createdAt: Date.now(),
-      author: { name: getAuthorName(), avatar: getAvatar() },
+      author: {
+        username: userData.username,
+        name: userData.displayname_th || 'Anonymous',
+        avatar: getAvatar() || '/Avatar/Anonymous.png'
+      }
     }
 
     const list = readLS()
@@ -179,8 +158,8 @@
 
     alert('✅ ขอบคุณสำหรับการรีวิวของคุณ!')
     try {
-      // ✅ redirect กลับหน้า dashboard (Spring Boot path)
-      window.location.href = '/dashboard'
+      // ✅ redirect ไปหน้า History เพื่อดูรีวิวของตัวเอง
+      window.location.href = '/dashboard/history'
     } catch {}
   }
 
@@ -188,23 +167,17 @@
   document.addEventListener('DOMContentLoaded', () => {
     bindRatingClicks()
     bindAvatarPicker()
-    bindAuthorModeToggle()
     setupTextLimiter()
 
     const form = qs('form')
     const submitBtn = qs('#btnSubmit')
+    const cancelBtn = qs('#btnCancel')
 
-    // ✅ ผูก event ปุ่ม submit
     submitBtn?.addEventListener('click', saveReview)
     form?.addEventListener('submit', saveReview)
-
-    // ✅ ปุ่ม cancel → กลับหน้า dashboard
-    const cancelBtn = qs('#btnCancel')
     cancelBtn?.addEventListener('click', (e) => {
       e.preventDefault()
-      try {
-        window.location.href = '/dashboard'
-      } catch {}
+      window.location.href = '/dashboard'
     })
   })
 })()

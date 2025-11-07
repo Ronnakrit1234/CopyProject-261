@@ -73,5 +73,37 @@
       </div>
     </section>
   </main>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const data = JSON.parse(localStorage.getItem("studentData") || "{}");
+
+      if (!data.username) {
+        alert("กรุณาเข้าสู่ระบบก่อน");
+        window.location.href = "/login";
+        return;
+      }
+
+      // ✅ ใส่ข้อมูลในหน้า
+      document.querySelector(".profile-name h2").textContent = data.displayname_th || "ไม่พบข้อมูล";
+      document.querySelector(".profile-sub").textContent = data.displayname_en || "-";
+      document.querySelector(".profile-email").textContent = data.email || "-";
+
+      // ✅ ใส่คณะ/ภาค/สถานะ
+      document.querySelector(".info-row:nth-child(1) .value").textContent = data.faculty || "-";
+      document.querySelector(".info-row:nth-child(2) .value").textContent = data.department || "-";
+
+      // ✅ กำหนดสถานะและมหาวิทยาลัย
+      document.querySelector(".info-row:nth-child(3) .value").textContent = "นักศึกษาปัจจุบัน";
+      document.querySelector(".info-row:nth-child(4) .value").textContent = "ธรรมศาสตร์ (Thammasat University)";
+    });
+
+    // ✅ ปุ่ม Logout
+    document.getElementById("btnLogout").addEventListener("click", () => {
+      localStorage.removeItem("studentData");
+      sessionStorage.removeItem("isAdmin");
+      window.location.href = "/login";
+    });
+  </script>
+
 </body>
 </html>

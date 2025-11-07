@@ -1,14 +1,9 @@
-// loginscript.js
-// Login logic + password toggle + admin session flag + remember me
+// loginscript.js (updated version for TU API)
+const REMEMBER_FLAG_KEY = 'cstuRememberEnabled';
+const REMEMBER_CREDS_KEY = 'cstuRememberCreds';
 
-// --- Keys for remember me ---
-const REMEMBER_FLAG_KEY = 'cstuRememberEnabled';   // "true" | "false"
-const REMEMBER_CREDS_KEY = 'cstuRememberCreds';    // JSON { username, password }
+try { sessionStorage.removeItem('isAdmin'); } catch (e) {}
 
-// เคลียร์สิทธิ์ admin ทุกครั้งที่เปิดหน้า login
-try { sessionStorage.removeItem('isAdmin'); } catch (e) { }
-
-/* === Elements === */
 const toggleBtn = document.getElementById("togglePassword");
 const passwordInput = document.getElementById("passwordInput");
 const form = document.getElementById("login-form");
@@ -18,116 +13,91 @@ const studentInput = document.getElementById("studentId");
 const readModeLink = document.getElementById("readModeLink");
 const rememberBox = document.getElementById("rememberMe");
 
-/* === Password toggle === */
+// === toggle password ===
 if (toggleBtn && passwordInput) {
   toggleBtn.addEventListener("click", () => {
     const isHidden = passwordInput.type === "password";
     passwordInput.type = isHidden ? "text" : "password";
-
     toggleBtn.setAttribute("aria-pressed", isHidden ? "true" : "false");
-    toggleBtn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
-    toggleBtn.setAttribute("title", isHidden ? "Hide password" : "Show password");
   });
 }
 
-/* === Remember me: preload values on page load === */
+// === Remember me preload ===
 (function preloadRemembered() {
   try {
     const enabled = localStorage.getItem(REMEMBER_FLAG_KEY) === 'true';
-    const raw = localStorage.getItem(REMEMBER_CREDS_KEY);
-    const creds = raw ? JSON.parse(raw) : null;
-
-    if (enabled && creds && typeof creds.username === 'string' && typeof creds.password === 'string') {
+    const creds = JSON.parse(localStorage.getItem(REMEMBER_CREDS_KEY) || "{}");
+    if (enabled && creds.username && creds.password) {
       studentInput.value = creds.username;
       passwordInput.value = creds.password;
-      if (rememberBox) rememberBox.checked = true;
-    } else {
-      if (rememberBox) rememberBox.checked = false;
+      rememberBox.checked = true;
     }
-  } catch (e) {
-    // ถ้ามีปัญหา parsing ให้ปิด remember ไว้ก่อน
-    try {
-      localStorage.setItem(REMEMBER_FLAG_KEY, 'false');
-      localStorage.removeItem(REMEMBER_CREDS_KEY);
-    } catch (e2) { }
-    if (rememberBox) rememberBox.checked = false;
-  }
+  } catch (e) {}
 })();
 
-/* === Helpers: save / clear remember me === */
 function saveRemember(username, password) {
-  try {
-    localStorage.setItem(REMEMBER_FLAG_KEY, 'true');
-    localStorage.setItem(REMEMBER_CREDS_KEY, JSON.stringify({ username, password }));
-  } catch (e) { }
+  localStorage.setItem(REMEMBER_FLAG_KEY, 'true');
+  localStorage.setItem(REMEMBER_CREDS_KEY, JSON.stringify({ username, password }));
 }
 function clearRemember() {
+  localStorage.setItem(REMEMBER_FLAG_KEY, 'false');
+  localStorage.removeItem(REMEMBER_CREDS_KEY);
+}
+
+// === Form submission ===
+form.addEventListener("submit", async function (e) {
+  e.preventDefault();
+
+  const studentId = studentInput.value.trim();
+  const password = passwordInput.value.trim();
+
+  errorMsg.style.display = "none";
+
+  if (!studentId || !password) {
+    errorMsg.textContent = "กรุณากรอกข้อมูลให้ครบถ้วน";
+    errorMsg.style.display = "block";
+    return;
+  }
+
+  loginBtn.classList.add("loading");
+  loginBtn.textContent = "กำลังเข้าสู่ระบบ...";
+  loginBtn.disabled = true;
+
   try {
-    localStorage.setItem(REMEMBER_FLAG_KEY, 'false');
-    localStorage.removeItem(REMEMBER_CREDS_KEY);
-  } catch (e) { }
-}
+    // ✅ เรียก API Backend ที่เชื่อมกับ TU API จริง
+    const response = await fetch(`http://localhost:9090/api/auth/login?username=${studentId}&password=${password}`, {
+      method: "POST"
+    });
 
-/* === Form submission & validation === */
-if (form) {
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
+    if (!response.ok) throw new Error("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
 
-    const studentId = studentInput.value.trim();
-    const password = passwordInput.value.trim();
+    const data = await response.json();
 
-    errorMsg.style.display = "none";
+    if (data.status === true) {
+      // Save remember me
+      if (rememberBox.checked) saveRemember(studentId, password);
+      else clearRemember();
 
-    if (studentId === "" || password === "") {
-      errorMsg.textContent = "Please fill in both fields.";
-      errorMsg.style.display = "block";
-      return;
+      // เก็บข้อมูลโปรไฟล์ไว้ใน localStorage
+      localStorage.setItem("studentData", JSON.stringify(data.user));
+
+      // Redirect ไปหน้าโปรไฟล์
+      window.location.href = "/dashboard";
+    } else {
+      throw new Error(data.message || "เข้าสู่ระบบไม่สำเร็จ");
     }
+  } catch (err) {
+    errorMsg.textContent = err.message;
+    errorMsg.style.display = "block";
+  } finally {
+    loginBtn.classList.remove("loading");
+    loginBtn.textContent = "Log in";
+    loginBtn.disabled = false;
+  }
+});
 
-    loginBtn.classList.add("loading");
-    loginBtn.textContent = "Loading...";
-    loginBtn.disabled = true;
-
-    setTimeout(() => {
-      loginBtn.classList.remove("loading");
-      loginBtn.textContent = "Log in";
-      loginBtn.disabled = false;
-
-      // --- Credentials ---
-      // Admin: 650002 / 1001
-      // User : 650001 / 1234
-      const isAdminLogin = (studentId === "650002" && password === "1001");
-      const isUserLogin = (studentId === "650001" && password === "1234");
-
-      if (isAdminLogin || isUserLogin) {
-        // Remember me
-        if (rememberBox && rememberBox.checked) {
-          saveRemember(studentId, password);
-        } else {
-          clearRemember();
-        }
-
-        // Set admin flag
-        try { sessionStorage.setItem('isAdmin', isAdminLogin ? 'true' : 'false'); } catch (e) { }
-
-        // Go to dashboard
-        window.location.href = "/dashboard";
-        return;
-      }
-
-      // default: invalid
-      errorMsg.textContent = "Invalid credentials. Please try again.";
-      errorMsg.style.display = "block";
-      errorMsg.style.animation = "fadeIn 0.3s ease";
-    }, 600);
-  });
-}
-
-/* === Read mode link (Guest) === */
+// === Read mode ===
 readModeLink?.addEventListener("click", (e) => {
   e.preventDefault();
-  // guest/reader ไม่มีสิทธิ์ admin
-  try { sessionStorage.setItem('isAdmin', 'false'); } catch (e) { }
-  // การกด read mode จะไม่ไปยุ่งกับค่าที่ Remember ไว้
   window.location.href = "/dashboard/guest";
 });
