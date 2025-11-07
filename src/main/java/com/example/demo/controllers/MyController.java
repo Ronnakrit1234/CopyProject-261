@@ -1,4 +1,4 @@
-package com.example.demo.controllers;
+/*package com.example.demo.controllers;
 
 
 import java.util.List;
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.demo.models.Card;
 import com.example.demo.models.CardDTO;
 import com.example.demo.models.DelCardDTO;
-import com.example.demo.repo.CardRepository;
+import com.example.demo.repo.ReviewRepository;
 
 
 
@@ -27,7 +27,7 @@ import com.example.demo.repo.CardRepository;
 @CrossOrigin 
 public class MyController {
 	@Autowired
-	private CardRepository repo;
+	private ReviewRepository repo;
 
 	@PostMapping("/post")
     public Card saveReview(@RequestBody CardDTO reviewDTO) {
@@ -55,3 +55,4 @@ public class MyController {
 	    }
 	}
 }
+*/

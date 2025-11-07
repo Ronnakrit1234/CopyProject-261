@@ -5,9 +5,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class CopyProject261Application {
-
-	public static void main(String[] args) {
-		SpringApplication.run(CopyProject261Application.class, args);
-	}
-
+    public static void main(String[] args) {
+        SpringApplication.run(CopyProject261Application.class, args);
+        System.out.println("✅ Application started successfully");
+    }
 }

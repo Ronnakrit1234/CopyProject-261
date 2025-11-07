@@ -1,6 +1,6 @@
 package com.example.demo.services;
 
-import com.example.demo.models.UserProfile;
+import com.example.demo.models.User;
 import com.example.demo.repo.UserProfileRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -70,9 +70,9 @@ public class TuAuthService {
 
     private void saveOrUpdateProfile(JsonNode json) {
         String username = json.get("username").asText();
-        Optional<UserProfile> optional = userProfileRepository.findByUsername(username);
+        Optional<User> optional = userProfileRepository.findByUsername(username);
 
-        UserProfile profile = optional.orElse(new UserProfile());
+        User profile = optional.orElse(new User());
         profile.setUsername(username);
         profile.setDisplayName(json.path("displayname_th").asText()); // ใช้ชื่อไทยเป็น displayName
         profile.setEmail(json.path("email").asText());
