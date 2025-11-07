@@ -1,21 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>CSTU Login</title>
-	<link rel="stylesheet" href="css/loginstyle.css" />
+
+	<!-- ✅ ใช้ absolute path -->
+	<link rel="stylesheet" href="/css/loginstyle.css" />
 </head>
 
 <body>
 	<div class="container">
 		<div class="topbar">
-			<img src="src/source/panthip.png" alt="Pantip Logo" class="pantip-logo" />
+			<!-- ✅ แก้ path ให้ตรงกับที่อยู่จริง -->
+			<img src="/source/panthip.png" alt="Pantip Logo" class="pantip-logo" />
 		</div>
 
 		<div class="login-box">
-			<img src="src/source/cstu.jpg" alt="CS TU Logo" class="logo" />
+			<!-- ✅ แก้ path -->
+			<img src="/source/cstu.jpg" alt="CS TU Logo" class="logo" />
 
 			<form id="login-form" autocomplete="off">
 				<input id="studentId" type="text" placeholder="student-id" required autocomplete="username" />
@@ -37,7 +40,6 @@
 				<p id="loginError" class="error-msg"></p>
 
 				<label class="remember">
-					<!-- เพิ่ม id เพื่อใช้กับสคริปต์ -->
 					<input type="checkbox" id="rememberMe" /> Remember me
 				</label>
 				<button type="submit" class="login-btn">Log in</button>
@@ -47,7 +49,7 @@
 		</div>
 	</div>
 
-	<script src="javascript/loginscript.js"></script>
+	<!-- ✅ ใช้ absolute path -->
+	<script src="/javascript/loginscript.js"></script>
 </body>
-
 </html>
