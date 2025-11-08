@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CSTU Pantip — Profile</title>
 
-  <!-- ✅ Spring Boot จะ resolve ไปที่ /css/profile.css -->
+  <!-- ✅ ใช้ CSS จาก Spring Boot -->
   <link rel="stylesheet" th:href="@{/css/profile.css}">
 </head>
+
 <body class="page">
   <!-- Sidebar -->
   <aside class="sidebar sidebar--orange">
@@ -25,11 +26,11 @@
     </div>
 
     <div class="sidebar__section">
-      <div class="avatar"><span class="avatar__icon">🕵️</span></div>
       <a class="logout" href="#" id="btnLogout">Log-out</a>
     </div>
   </aside>
 
+  <!-- Main Content -->
   <main class="main">
     <header class="toolbar">
       <div class="toolbar__left">
@@ -73,37 +74,48 @@
       </div>
     </section>
   </main>
+
+  <!-- ✅ Script -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const data = JSON.parse(localStorage.getItem("studentData") || "{}");
 
+      // ถ้ายังไม่ได้ login ให้กลับไปหน้า index
       if (!data.username) {
         alert("กรุณาเข้าสู่ระบบก่อน");
-        window.location.href = "/login";
+        window.location.href = "/index.html";
         return;
       }
 
-      // ✅ ใส่ข้อมูลในหน้า
+      // ✅ ใส่ข้อมูลผู้ใช้ในหน้า Profile
       document.querySelector(".profile-name h2").textContent = data.displayname_th || "ไม่พบข้อมูล";
       document.querySelector(".profile-sub").textContent = data.displayname_en || "-";
       document.querySelector(".profile-email").textContent = data.email || "-";
 
-      // ✅ ใส่คณะ/ภาค/สถานะ
+      // ✅ ใส่ข้อมูลอื่น ๆ
       document.querySelector(".info-row:nth-child(1) .value").textContent = data.faculty || "-";
       document.querySelector(".info-row:nth-child(2) .value").textContent = data.department || "-";
-
-      // ✅ กำหนดสถานะและมหาวิทยาลัย
       document.querySelector(".info-row:nth-child(3) .value").textContent = "นักศึกษาปัจจุบัน";
       document.querySelector(".info-row:nth-child(4) .value").textContent = "ธรรมศาสตร์ (Thammasat University)";
-    });
 
-    // ✅ ปุ่ม Logout
-    document.getElementById("btnLogout").addEventListener("click", () => {
-      localStorage.removeItem("studentData");
-      sessionStorage.removeItem("isAdmin");
-      window.location.href = "/login";
+      // ✅ ปุ่ม Logout
+      const logoutBtn = document.getElementById("btnLogout");
+      if (logoutBtn) {
+        logoutBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          if (confirm("คุณต้องการออกจากระบบหรือไม่?")) {
+            // 🔹 ลบข้อมูลทั้งหมดที่เกี่ยวข้อง
+            localStorage.removeItem("studentData");
+            localStorage.removeItem("reviewFeedback");
+            localStorage.removeItem("userFeedbackRecords");
+            sessionStorage.removeItem("isAdmin");
+
+            // 🔹 กลับไปหน้า Login (index.html)
+            window.location.href = "/index.html";
+          }
+        });
+      }
     });
   </script>
-
 </body>
 </html>

@@ -1,52 +1,57 @@
-// review-detail.js (Spring Boot-ready + Feedback toggle + Comment System)
+// review-detail.js (ปุ่มค้างสีส้มถาวร)
 (() => {
   const API_REVIEW = "http://localhost:9090/api/reviews";
   const API_COMMENT = "http://localhost:9090/api/comments";
   const qs = (sel, el = document) => el.querySelector(sel);
 
-  // ✅ อ่านค่า id จาก URL เช่น ?id=3
   const params = new URLSearchParams(window.location.search);
   const reviewId = params.get("id");
+
   if (!reviewId) {
     document.body.innerHTML = `<p style="padding:40px;text-align:center;">❌ ไม่พบรีวิวที่ต้องการ</p>`;
     return;
   }
 
-  // ======== FEEDBACK TOGGLE SYSTEM ========
-  const FEEDBACK_KEY = "reviewFeedbacks"; // เก็บสถานะ feedback ของ user
-  const feedbackState = JSON.parse(localStorage.getItem(FEEDBACK_KEY) || "{}");
-  const getFeedback = () => feedbackState[reviewId] || null;
-  const setFeedback = (val) => {
-    feedbackState[reviewId] = val;
-    localStorage.setItem(FEEDBACK_KEY, JSON.stringify(feedbackState));
-  };
+  // ✅ ดึงข้อมูลผู้ใช้จาก localStorage
+  const studentData = JSON.parse(localStorage.getItem("studentData") || "{}");
+  const username = studentData.username || "guest";
 
-  let currentReview = null;
+  // ✅ key สำหรับจำ feedback ของ user คนนี้
+  const FEEDBACK_KEY = "userFeedbackRecords";
+  const allFeedback = JSON.parse(localStorage.getItem(FEEDBACK_KEY) || "{}");
+  const userFeedbackKey = `${username}_${reviewId}`;
+
+  const getFeedback = () => allFeedback[userFeedbackKey] || null;
+  const setFeedback = (val) => {
+    allFeedback[userFeedbackKey] = val;
+    localStorage.setItem(FEEDBACK_KEY, JSON.stringify(allFeedback));
+  };
 
   // ✅ แสดงข้อมูลรีวิว
   const renderReview = (review) => {
-    currentReview = review;
     const container = qs(".frame-box-detail");
     if (!container) return;
 
     const stars = "⭐".repeat(review.rating) + "☆".repeat(5 - review.rating);
-    const userFeedback = getFeedback();
+    const userFeedback = getFeedback(); // <<-- อ่าน feedback เดิม
 
     container.innerHTML = `
       <div class="box-detail">
         <div class="box-content">
           <div class="left-side">
-            <h2>${review.course}</h2>
+            <h2 style="margin-top:0;">${review.course}</h2>
             <p style="color:#777;">Professor: ${review.professor || "-"}</p>
             <div class="stars">${stars}</div>
             <div class="rating-number">${review.rating}/5</div>
             <p class="review-text">${review.comment}</p>
 
             <div class="footer-buttons">
-              <button id="btnHelpful" class="${userFeedback === "helpful" ? "active" : ""}">
+              <button id="btnHelpful"
+                class="${userFeedback === "helpful" ? "myvote" : ""}">
                 💬 Helpful (${review.helpfulCount || 0})
               </button>
-              <button id="btnNotHelpful" class="${userFeedback === "notHelpful" ? "active" : ""}">
+              <button id="btnNotHelpful"
+                class="${userFeedback === "notHelpful" ? "myvote" : ""}">
                 🙃 Not Helpful (${review.notHelpfulCount || 0})
               </button>
             </div>
@@ -66,44 +71,50 @@
     `;
   };
 
-  // ✅ โหลดคอมเมนต์จาก backend
+  // ✅ โหลดคอมเมนต์
   const loadComments = async () => {
     const listEl = qs("#commentList");
     if (!listEl) return;
+
     try {
       const res = await fetch(`${API_COMMENT}/${reviewId}`);
       if (!res.ok) throw new Error("โหลดคอมเมนต์ล้มเหลว");
       const comments = await res.json();
-      listEl.innerHTML = comments.length
-        ? comments
-            .map(
-              (c) => `
-          <div class="comment-item">
-            <img src="/Avatar/Anonymous.png" alt="Anonymous">
-            <div class="comment-body">
-              <p class="name">${c.author || "Anonymous"}</p>
-              <p class="text">${c.text}</p>
-              <p class="time">${new Date(c.createdAt).toLocaleString("th-TH", {
-                hour: "2-digit",
-                minute: "2-digit",
-                day: "numeric",
-                month: "short",
-              })}</p>
-            </div>
-          </div>`
-            )
-            .join("")
-        : `<p style="color:#888;">No comments yet.</p>`;
+
+      listEl.innerHTML = "";
+      if (comments.length === 0) {
+        listEl.innerHTML = `<p style="color:#888;">No comments yet.</p>`;
+        return;
+      }
+
+      comments.forEach((c) => {
+        const time = new Date(c.createdAt).toLocaleString("th-TH", {
+          hour: "2-digit",
+          minute: "2-digit",
+          day: "numeric",
+          month: "short",
+        });
+
+        const el = document.createElement("div");
+        el.className = "comment-item";
+        el.innerHTML = `
+          <img src="/Avatar/Anonymous.png" alt="Anonymous">
+          <div class="comment-body">
+            <p class="name">${c.author || "Anonymous"}</p>
+            <p class="text">${c.text}</p>
+            <p class="time">${time}</p>
+          </div>
+        `;
+        listEl.appendChild(el);
+      });
     } catch (err) {
       console.error("❌ โหลดคอมเมนต์ล้มเหลว:", err);
     }
   };
 
-  // ✅ เพิ่มคอมเมนต์
+  // ✅ เพิ่มคอมเมนต์ใหม่
   const addComment = async (text) => {
     if (!text.trim()) return;
-    const studentData = JSON.parse(localStorage.getItem("studentData") || "{}");
-    const username = studentData.username;
     if (!username) {
       alert("⚠️ กรุณาเข้าสู่ระบบก่อนแสดงความคิดเห็น");
       return;
@@ -129,34 +140,37 @@
     }
   };
 
-  // ✅ อัปเดต Feedback (มีระบบ toggle)
+  // ✅ ส่ง feedback (ให้สีค้างถาวร)
   const sendFeedback = async (type) => {
-    const current = getFeedback();
-    let action = "";
+    if (getFeedback()) {
+      alert("⚠️ คุณได้ให้ Feedback แล้ว");
+      return;
+    }
 
-    // 🔁 toggle logic
-    if (current === type) {
-      action = "cancel"; // ยกเลิกการกด
-      setFeedback(null);
-    } else if (current && current !== type) {
-      action = type; // สลับจากอีกฝั่ง
-      setFeedback(type);
+    setFeedback(type); // บันทึกว่า user เคยกดแล้ว
+
+    const btnHelpful = qs("#btnHelpful");
+    const btnNotHelpful = qs("#btnNotHelpful");
+
+    // อัปเดตสีในทันที
+    if (type === "helpful") {
+      btnHelpful.classList.add("myvote");
+      btnNotHelpful.classList.remove("myvote");
     } else {
-      action = type; // กดครั้งแรก
-      setFeedback(type);
+      btnNotHelpful.classList.add("myvote");
+      btnHelpful.classList.remove("myvote");
     }
 
     try {
-      const res = await fetch(`${API_REVIEW}/${reviewId}/feedback?type=${type}&action=${action}`, {
-        method: "PUT",
-      });
+      const res = await fetch(
+        `${API_REVIEW}/${reviewId}/feedback?type=${type}&action=${type}`,
+        { method: "PUT" }
+      );
       if (!res.ok) throw new Error("อัปเดต feedback ไม่สำเร็จ");
 
       const updated = await res.json();
-      currentReview = updated;
-      renderReview(updated);
-      await loadComments();
-      bindButtons();
+      btnHelpful.innerHTML = `💬 Helpful (${updated.helpfulCount || 0})`;
+      btnNotHelpful.innerHTML = `🙃 Not Helpful (${updated.notHelpfulCount || 0})`;
     } catch (err) {
       console.error("❌ Feedback update failed:", err);
       alert("เกิดข้อผิดพลาดในการอัปเดต Feedback");
@@ -178,7 +192,7 @@
     }
   };
 
-  // ✅ bind event ปุ่ม
+  // ✅ bind ปุ่ม
   const bindButtons = () => {
     const btnHelpful = qs("#btnHelpful");
     const btnNotHelpful = qs("#btnNotHelpful");
@@ -186,6 +200,7 @@
 
     if (btnHelpful) btnHelpful.addEventListener("click", () => sendFeedback("helpful"));
     if (btnNotHelpful) btnNotHelpful.addEventListener("click", () => sendFeedback("notHelpful"));
+
     if (btnSubmit)
       btnSubmit.addEventListener("click", async () => {
         const input = qs("#commentInput");

@@ -22,7 +22,7 @@
   flex-direction: column;
 }
 
-/* ===== หัวกล่องสีส้ม ===== */
+/* ===== แถบหัวสีส้มด้านบน ===== */
 .box-detail::before {
   content: "";
   display: block;
@@ -40,7 +40,7 @@
   box-sizing: border-box;
 }
 
-/* ===== ซ้าย–ขวา ===== */
+/* ===== ฝั่งซ้าย ===== */
 .left-side {
   flex: 1;
   overflow: hidden;
@@ -74,6 +74,7 @@
   background-color: #ffae00;
 }
 
+/* ===== เส้นแบ่งกลาง ===== */
 .divider {
   width: 2px;
   background-color: #ddd;
@@ -102,28 +103,65 @@
   margin-bottom: 20px;
 }
 
-/* ===== ปุ่ม Helpful / Not Helpful ===== */
+/* ===== ปุ่ม Feedback (Helpful / Not Helpful) ===== */
 .footer-buttons {
   display: flex;
   gap: 10px;
 }
 
 .footer-buttons button {
-  padding: 8px 14px;
+  padding: 8px 18px;
   border-radius: 999px;
   border: 1px solid rgba(0, 0, 0, 0.2);
   background: #fff;
   cursor: pointer;
-  font-size: 14px;
-  transition: 0.2s;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+  color: #333;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  margin-left: 10px;
 }
 
 .footer-buttons button:hover {
-  background: #ffd057;
+  background: #fff3d1;
+  transform: scale(1.05);
+}
+
+/* ✅ ปุ่มที่กดแล้ว (ค้างสีส้มถาวร) */
+.footer-buttons button.myvote {
+  background-color: #ff9800 !important;
+  border-color: #e67e00;
+  color: #fff !important;
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(255, 170, 0, 0.6);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+/* เพิ่ม icon ✅ หลังข้อความ */
+.footer-buttons button.myvote::after {
+  content: " ✅";
+  font-size: 14px;
+}
+
+/* ✅ เอฟเฟกต์ glow รอบปุ่มที่กด */
+.footer-buttons button.myvote::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  box-shadow: 0 0 15px rgba(255, 165, 0, 0.6);
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+/* hover ปุ่มที่กดแล้ว — glow เด่นขึ้น */
+.footer-buttons button.myvote:hover::before {
+  opacity: 1;
 }
 
 /* ===== ส่วน comment ===== */
-/* ✅ ให้ช่องพิมพ์คอมเมนต์ติดล่าง */
 .comment-input {
   display: flex;
   gap: 10px;
@@ -136,7 +174,7 @@
   z-index: 10;
 }
 
-/* ช่อง input + ปุ่ม */
+/* ช่อง input + ปุ่มส่งคอมเมนต์ */
 .comment-input input {
   flex: 1;
   padding: 8px 10px;

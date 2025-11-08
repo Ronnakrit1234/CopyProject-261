@@ -97,7 +97,6 @@
     wrap.addEventListener('click', () => {
       const id = r.id;
       if (id) {
-        // ✅ ใช้ controller path ไม่ต้องมี .html
         window.location.href = `/dashboard/review-detail?id=${id}`;
       } else {
         console.warn("⚠️ Review ไม่มี ID, ไม่สามารถเปิดหน้า detail ได้");
@@ -157,6 +156,23 @@
           btn.classList.add('is-active');
         }
         renderGrid();
+      });
+    }
+
+    // ✅ ปุ่ม Logout
+    const logoutBtn = qs('#btnLogout');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
+          // ลบข้อมูลทั้งหมดที่เกี่ยวกับ session/localStorage
+          localStorage.removeItem('studentData');
+          localStorage.removeItem('reviewFeedback');
+          localStorage.removeItem('userFeedbackRecords');
+
+          // ✅ Redirect กลับหน้า Login (index.html)
+          window.location.href = '/index.html';
+        }
       });
     }
   }
