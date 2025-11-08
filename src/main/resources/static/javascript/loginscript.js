@@ -1,8 +1,10 @@
-// loginscript.js (updated version for TU API)
-const REMEMBER_FLAG_KEY = 'cstuRememberEnabled';
-const REMEMBER_CREDS_KEY = 'cstuRememberCreds';
+// loginscript.js (TU API version — no session, no cookie)
+const REMEMBER_FLAG_KEY = "cstuRememberEnabled";
+const REMEMBER_CREDS_KEY = "cstuRememberCreds";
 
-try { sessionStorage.removeItem('isAdmin'); } catch (e) {}
+try {
+  sessionStorage.removeItem("isAdmin");
+} catch (e) {}
 
 const toggleBtn = document.getElementById("togglePassword");
 const passwordInput = document.getElementById("passwordInput");
@@ -25,7 +27,7 @@ if (toggleBtn && passwordInput) {
 // === Remember me preload ===
 (function preloadRemembered() {
   try {
-    const enabled = localStorage.getItem(REMEMBER_FLAG_KEY) === 'true';
+    const enabled = localStorage.getItem(REMEMBER_FLAG_KEY) === "true";
     const creds = JSON.parse(localStorage.getItem(REMEMBER_CREDS_KEY) || "{}");
     if (enabled && creds.username && creds.password) {
       studentInput.value = creds.username;
@@ -36,11 +38,14 @@ if (toggleBtn && passwordInput) {
 })();
 
 function saveRemember(username, password) {
-  localStorage.setItem(REMEMBER_FLAG_KEY, 'true');
-  localStorage.setItem(REMEMBER_CREDS_KEY, JSON.stringify({ username, password }));
+  localStorage.setItem(REMEMBER_FLAG_KEY, "true");
+  localStorage.setItem(
+    REMEMBER_CREDS_KEY,
+    JSON.stringify({ username, password })
+  );
 }
 function clearRemember() {
-  localStorage.setItem(REMEMBER_FLAG_KEY, 'false');
+  localStorage.setItem(REMEMBER_FLAG_KEY, "false");
   localStorage.removeItem(REMEMBER_CREDS_KEY);
 }
 
@@ -64,24 +69,29 @@ form.addEventListener("submit", async function (e) {
   loginBtn.disabled = true;
 
   try {
-    // ✅ เรียก API Backend ที่เชื่อมกับ TU API จริง
-    const response = await fetch(`http://localhost:9090/api/auth/login?username=${studentId}&password=${password}`, {
-      method: "POST"
-    });
+    // ✅ เรียก TU API ผ่าน Backend (stateless)
+    const response = await fetch(
+      `http://localhost:9090/api/auth/login?username=${studentId}&password=${password}`,
+      {
+        method: "POST"
+      }
+    );
 
     if (!response.ok) throw new Error("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
 
     const data = await response.json();
 
     if (data.status === true) {
-      // Save remember me
+      // ✅ จำ username และข้อมูลผู้ใช้ไว้ใน localStorage (แทน session)
+      localStorage.setItem("username", data.user.username);
+      localStorage.setItem("displayName", data.user.displayName || "");
+      localStorage.setItem("studentData", JSON.stringify(data.user));
+
+      // ✅ Remember me (ถ้าเลือก)
       if (rememberBox.checked) saveRemember(studentId, password);
       else clearRemember();
 
-      // เก็บข้อมูลโปรไฟล์ไว้ใน localStorage
-      localStorage.setItem("studentData", JSON.stringify(data.user));
-
-      // Redirect ไปหน้าโปรไฟล์
+      // ✅ ไปหน้า dashboard
       window.location.href = "/dashboard";
     } else {
       throw new Error(data.message || "เข้าสู่ระบบไม่สำเร็จ");

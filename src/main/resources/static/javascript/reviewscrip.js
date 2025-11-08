@@ -1,183 +1,141 @@
-/* CSTU Pantip — Review form saver (writes to localStorage "courseReviews")
-   Schema ที่ Dashboard อ่าน:
-   {
-     id, course, professor, rating(1..5), comment, createdAt,
-     author:{ username, name, avatar }
-   }
-*/
-;(() => {
-  const LS_KEY = 'courseReviews'
-  const LIMIT = 220 // ✅ จำกัดความยาวรีวิว
+// ✅ reviewscript.js — เวอร์ชันไม่ใช้ session / cookie
+document.addEventListener("DOMContentLoaded", () => {
+  const reviewForm = document.getElementById("reviewForm");
+  const ratingBoxes = document.querySelectorAll(".star-box");
+  const charCount = document.getElementById("charCount");
+  const reviewText = document.getElementById("reviewText");
+  const avatarPreview = document.getElementById("avatarPreview");
+  const avatarOptions = document.querySelectorAll(".avatar-option");
+  const btnCancel = document.getElementById("btnCancel");
+  const profileModeBtn = document.getElementById("profileMode");
+  const anonymousModeBtn = document.getElementById("anonymousMode");
 
-  // ---------- helpers ----------
-  const qs  = (sel, el=document) => el.querySelector(sel)
-  const qsa = (sel, el=document) => Array.from(el.querySelectorAll(sel))
-  const getVal = (selectors) => {
-    for (const s of selectors) {
-      const el = qs(s)
-      if (el && 'value' in el) return String(el.value).trim()
-    }
-    return ''
-  }
-  const readLS = () => {
-    try {
-      const j = JSON.parse(localStorage.getItem(LS_KEY) || '[]')
-      return Array.isArray(j) ? j : []
-    } catch {
-      return []
-    }
-  }
-  const writeLS = (rows) => localStorage.setItem(LS_KEY, JSON.stringify(rows || []))
-  const rid = () => {
-    if (crypto?.getRandomValues) {
-      const b = new Uint32Array(2)
-      crypto.getRandomValues(b)
-      return `r-${b[0].toString(16)}${b[1].toString(16)}`
-    }
-    return `r-${Math.random().toString(16).slice(2)}`
-  }
+  // ✅ เก็บ state ของผู้ใช้
+  let selectedRating = 0;
+  let selectedAvatar = "/Avatar/Anonymous.png";
+  let isAnonymous = false;
 
-  // ---------- rating ----------
-  function parseRatingFromText(txt = '') {
-    const n = Number(String(txt).replace(/[^\d]/g, ''))
-    return n >= 1 && n <= 5 ? n : NaN
-  }
+  // ✅ โหมด Profile
+  profileModeBtn.addEventListener("click", () => {
+    isAnonymous = false;
+    profileModeBtn.classList.add("active");
+    anonymousModeBtn.classList.remove("active");
+    avatarPreview.src = selectedAvatar;
+  });
 
-  function getRating() {
-    const activeBtn = qs('[data-rating].is-active, [data-rating].selected')
-    if (activeBtn) {
-      const v = Number(activeBtn.dataset.rating || parseRatingFromText(activeBtn.textContent))
-      if (v >= 1 && v <= 5) return v
-    }
-    return NaN
-  }
+  // ✅ โหมด Anonymous
+  anonymousModeBtn.addEventListener("click", () => {
+    isAnonymous = true;
+    anonymousModeBtn.classList.add("active");
+    profileModeBtn.classList.remove("active");
+    avatarPreview.src = "/Avatar/Anonymous.png";
+  });
 
-  function bindRatingClicks() {
-    const container = qs('#ratingBox')
-    if (!container) return
-    container.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-rating]')
-      if (!btn) return
-      const val = Number(btn.dataset.rating || parseRatingFromText(btn.textContent))
-      if (!(val >= 1 && val <= 5)) return
-      qsa('[data-rating]', container).forEach((el) => el.classList.remove('is-active', 'selected'))
-      btn.classList.add('is-active', 'selected')
-    })
-  }
+  // ✅ นับจำนวนตัวอักษร
+  reviewText.addEventListener("input", () => {
+    const count = reviewText.value.length;
+    charCount.textContent = `${count}/1000`;
+    charCount.style.color = count > 1000 ? "red" : "#333";
+  });
 
-  // ---------- avatar ----------
-  function bindAvatarPicker() {
-    const preview = qs('#avatarPreview')
-    const options = qsa('.avatar-option')
-    if (!options.length) return
+  // ✅ เลือกดาว Rating
+  ratingBoxes.forEach((box) => {
+    box.addEventListener("click", () => {
+      selectedRating = parseInt(box.dataset.rating);
+      ratingBoxes.forEach((b) => b.classList.remove("active"));
+      box.classList.add("active");
+    });
+  });
 
-    options.forEach((img) => {
-      img.addEventListener('click', () => {
-        qsa('.avatar-option').forEach((i) => i.classList.remove('is-active', 'selected'))
-        img.classList.add('is-active', 'selected')
-        if (preview) preview.src = img.src
-      })
-    })
-  }
-
-  function getAvatar() {
-    const el = qs('.avatar-option.is-active, .avatar-option.selected')
-    return el ? el.getAttribute('src') || '' : qs('#avatarPreview')?.getAttribute('src') || ''
-  }
-
-  // ---------- text limit feedback ----------
-  function setupTextLimiter() {
-    const ta = qs('#reviewText')
-    const fb = qs('#charCount')
-    const render = () => {
-      const len = (ta?.value || '').length
-      if (!fb) return
-      const ok = len <= LIMIT
-      fb.textContent = `${len}/${LIMIT} — ${ok ? 'OK' : 'Too long'}`
-      fb.classList.toggle('ok', ok)
-      fb.classList.toggle('too-long', !ok)
-    }
-    if (fb) fb.textContent = `0/${LIMIT}`
-    render()
-    ta?.addEventListener('input', render)
-  }
-
-  // ---------- SAVE ----------
-  function saveReview(ev) {
-    ev?.preventDefault?.()
-
-    const form = ev.target.closest('form') || qs('form')
-    if (!form.checkValidity()) {
-      form.reportValidity()
-      return
-    }
-
-    // ✅ ดึงข้อมูลผู้ใช้จาก TU API (เก็บใน localStorage)
-    const userData = JSON.parse(localStorage.getItem('studentData') || '{}')
-    if (!userData.username) {
-      alert('กรุณาเข้าสู่ระบบก่อน')
-      window.location.href = '/login'
-      return
-    }
-
-    const course = getVal(['#subject'])
-    const professor = getVal(['#professor'])
-    const ta = qs('#reviewText')
-    const comment = ta?.value.trim() || ''
-
-    if (comment.length > LIMIT) {
-      alert(`❌ รีวิวของคุณยาวเกิน ${LIMIT} ตัวอักษร กรุณาแก้ไขก่อนส่ง`)
-      ta?.focus()
-      return
-    }
-
-    const rating = getRating()
-    if (!(rating >= 1 && rating <= 5)) {
-      alert('⭐ กรุณาเลือก Rating ก่อนส่งรีวิวครับ')
-      return
-    }
-
-    // ✅ เพิ่มข้อมูลผู้ใช้เข้าไปในรีวิว
-    const row = {
-      id: rid(),
-      course: course || 'Untitled',
-      professor: professor || '',
-      rating: rating,
-      comment: comment.slice(0, LIMIT),
-      createdAt: Date.now(),
-      author: {
-        username: userData.username,
-        name: userData.displayname_th || 'Anonymous',
-        avatar: getAvatar() || '/Avatar/Anonymous.png'
+  // ✅ เลือก Avatar
+  avatarOptions.forEach((img) => {
+    img.addEventListener("click", () => {
+      if (isAnonymous) {
+        alert("⚠️ โหมด Anonymous จะใช้รูปโปรไฟล์ Anonymous เท่านั้น");
+        return;
       }
-    }
+      selectedAvatar = img.getAttribute("src");
+      avatarPreview.src = selectedAvatar;
+    });
+  });
 
-    const list = readLS()
-    list.push(row)
-    writeLS(list)
+  // ✅ ปุ่ม Cancel → กลับหน้า Dashboard
+  btnCancel.addEventListener("click", (e) => {
+    e.preventDefault();
+    window.location.href = "/dashboard";
+  });
 
-    alert('✅ ขอบคุณสำหรับการรีวิวของคุณ!')
-    try {
-      // ✅ redirect ไปหน้า History เพื่อดูรีวิวของตัวเอง
-      window.location.href = '/dashboard/history'
-    } catch {}
+  // ✅ Toast แจ้งผล
+  function showToast(msg, success = true) {
+    const toast = document.createElement("div");
+    toast.className = "toast";
+    toast.textContent = msg;
+    toast.style.background = success ? "#dfffd8" : "#ffe5e5";
+    toast.style.color = success ? "#2e7d32" : "#c62828";
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add("is-show"), 50);
+    setTimeout(() => {
+      toast.classList.remove("is-show");
+      setTimeout(() => toast.remove(), 300);
+    }, 2200);
   }
 
-  // ---------- INIT ----------
-  document.addEventListener('DOMContentLoaded', () => {
-    bindRatingClicks()
-    bindAvatarPicker()
-    setupTextLimiter()
+  // ✅ Submit ฟอร์ม
+  reviewForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-    const form = qs('form')
-    const submitBtn = qs('#btnSubmit')
-    const cancelBtn = qs('#btnCancel')
+    const username = localStorage.getItem("username"); // ดึง username จาก login
+    if (!username) {
+      showToast("⚠️ กรุณาเข้าสู่ระบบก่อนทำการรีวิว", false);
+      return;
+    }
 
-    submitBtn?.addEventListener('click', saveReview)
-    form?.addEventListener('submit', saveReview)
-    cancelBtn?.addEventListener('click', (e) => {
-      e.preventDefault()
-      window.location.href = '/dashboard'
-    })
-  })
-})()
+    const course = document.getElementById("subject").value.trim();
+    const professor = document.getElementById("professor").value.trim();
+    const comment = reviewText.value.trim();
+
+    if (!course || !professor || !comment) {
+      showToast("⚠️ กรุณากรอกข้อมูลให้ครบทุกช่อง", false);
+      return;
+    }
+
+    if (selectedRating === 0) {
+      showToast("⚠️ กรุณาเลือกจำนวนดาวก่อนส่งรีวิว", false);
+      return;
+    }
+
+    const payload = {
+      course,
+      professor,
+      rating: selectedRating,
+      comment,
+      avatar: isAnonymous ? "/Avatar/Anonymous.png" : selectedAvatar,
+      anonymous: isAnonymous,
+    };
+
+    console.log("📦 Sending Review:", payload);
+
+    try {
+      // ✅ แนบ username ไปกับ request (แทน session)
+      const res = await fetch(`/api/reviews/add?username=${encodeURIComponent(username)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || "Server error");
+      }
+
+      const result = await res.json();
+      console.log("✅ Review added:", result);
+
+      showToast("✅ รีวิวถูกบันทึกเรียบร้อย!");
+      setTimeout(() => (window.location.href = "/dashboard"), 1500);
+    } catch (err) {
+      console.error("❌ Error saving review:", err);
+      showToast("❌ ไม่สามารถบันทึกรีวิวได้ กรุณาลองอีกครั้ง", false);
+    }
+  });
+});
