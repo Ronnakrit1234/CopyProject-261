@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@CrossOrigin(origins = "http://localhost:9090") // ✅ ไม่ต้อง allowCredentials เพราะไม่ใช้ cookie แล้ว
+@CrossOrigin(origins = "http://localhost:9090") // ✅ ไม่ใช้ cookie แล้ว
 @RestController
 @RequestMapping("/api/reviews")
 public class ReviewController {
@@ -73,6 +73,23 @@ public class ReviewController {
             System.err.println("❌ ERROR fetching user's reviews: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("❌ เกิดข้อผิดพลาดขณะดึงข้อมูลรีวิวของผู้ใช้");
+        }
+    }
+
+    // ✅ GET /api/reviews/{id} — ดึงรีวิวตาม ID สำหรับ review-detail.html
+    @GetMapping("/{id}")
+    public ResponseEntity<Object> getReviewById(@PathVariable Long id) {
+        try {
+            Review review = reviewService.getReviewById(id);
+            if (review == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("❌ ไม่พบรีวิวที่ต้องการ");
+            }
+            return ResponseEntity.ok(review);
+        } catch (Exception e) {
+            System.err.println("❌ ERROR fetching review by ID: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("❌ เกิดข้อผิดพลาดขณะดึงข้อมูลรีวิว: " + e.getMessage());
         }
     }
 }

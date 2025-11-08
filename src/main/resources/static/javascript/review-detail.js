@@ -1,8 +1,7 @@
-// review-detail.js (เวอร์ชัน Spring Boot-ready)
+// review-detail.js (Spring Boot-ready + comment เก็บใน DB)
 (() => {
-  const LS_REVIEW_KEY = "courseReviews";
-  const LS_COMMENT_KEY = "reviewComments";
-
+  const API_REVIEW = "http://localhost:9090/api/reviews";
+  const API_COMMENT = "http://localhost:9090/api/comments";
   const qs = (sel, el = document) => el.querySelector(sel);
 
   const params = new URLSearchParams(window.location.search);
@@ -13,19 +12,7 @@
     return;
   }
 
-  const safeParse = (raw) => {
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return null;
-    }
-  };
-
-  const readReviews = () => safeParse(localStorage.getItem(LS_REVIEW_KEY)) || [];
-  const readComments = () => safeParse(localStorage.getItem(LS_COMMENT_KEY)) || {};
-  const writeComments = (data) =>
-    localStorage.setItem(LS_COMMENT_KEY, JSON.stringify(data));
-
+  // ✅ แสดงข้อมูลรีวิว
   const renderReview = (review) => {
     const container = qs(".frame-box-detail");
     if (!container) return;
@@ -41,9 +28,10 @@
             <div class="stars">${stars}</div>
             <div class="rating-number">${review.rating}/5</div>
             <p class="review-text">${review.comment}</p>
+
             <div class="footer-buttons">
-              <button>💬 Helpful (7)</button>
-              <button>🙃 Not Helpful (2)</button>
+              <button>💬 Helpful (${review.helpfulCount || 0})</button>
+              <button>🙃 Not Helpful (${review.notHelpfulCount || 0})</button>
             </div>
           </div>
 
@@ -61,78 +49,95 @@
     `;
   };
 
-  const renderComments = () => {
-    const allComments = readComments();
-    const list = allComments[reviewId] || [];
+  // ✅ โหลดคอมเมนต์จาก backend
+  const loadComments = async () => {
     const listEl = qs("#commentList");
-
     if (!listEl) return;
-    listEl.innerHTML = "";
 
-    if (list.length === 0) {
-      listEl.innerHTML = `<p style="color:#888;">No comments yet.</p>`;
-      return;
+    try {
+      const res = await fetch(`${API_COMMENT}/${reviewId}`);
+      const comments = await res.json();
+
+      listEl.innerHTML = "";
+      if (comments.length === 0) {
+        listEl.innerHTML = `<p style="color:#888;">No comments yet.</p>`;
+        return;
+      }
+
+      comments.forEach((c) => {
+        const time = new Date(c.createdAt).toLocaleString("th-TH", {
+          hour: "2-digit",
+          minute: "2-digit",
+          day: "numeric",
+          month: "short",
+        });
+
+        const el = document.createElement("div");
+        el.className = "comment-item";
+        el.innerHTML = `
+          <img src="/Avatar/Anonymous.png" alt="Anonymous">
+          <div class="comment-body">
+            <p class="name">${c.author || "Anonymous"}</p>
+            <p class="text">${c.text}</p>
+            <p class="time">${time}</p>
+          </div>
+        `;
+        listEl.appendChild(el);
+      });
+    } catch (err) {
+      console.error("❌ โหลดคอมเมนต์ล้มเหลว:", err);
     }
-
-    list.forEach((c) => {
-      const el = document.createElement("div");
-      el.className = "comment-item";
-      el.innerHTML = `
-        <img src="/avatar/anonymous.png" alt="Anonymous">
-        <div class="comment-body">
-          <p class="name">Anonymous</p>
-          <p class="text">${c.text}</p>
-          <p class="time">${c.time}</p>
-        </div>
-      `;
-      listEl.appendChild(el);
-    });
   };
 
-  const addComment = (text) => {
+  // ✅ เพิ่มคอมเมนต์ใหม่ (บันทึกลง DB)
+  const addComment = async (text) => {
     if (!text.trim()) return;
 
-    const all = readComments();
-    const list = all[reviewId] || [];
+    const comment = {
+      reviewId: Number(reviewId),
+      text,
+      author: "Anonymous"
+    };
 
-    const now = new Date();
-    const time = now.toLocaleString("th-TH", {
-      hour: "2-digit",
-      minute: "2-digit",
-      day: "numeric",
-      month: "short",
-    });
+    try {
+      const res = await fetch(API_COMMENT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(comment)
+      });
 
-    list.unshift({ text, time });
-    all[reviewId] = list;
-    writeComments(all);
-    renderComments();
+      if (!res.ok) throw new Error("บันทึกคอมเมนต์ไม่สำเร็จ");
+      await loadComments();
+    } catch (err) {
+      alert("❌ Error saving comment: " + err.message);
+      console.error(err);
+    }
   };
 
-  const init = () => {
-    const reviews = readReviews();
-    const review = reviews.find((r) => r.id === reviewId);
-
-    if (!review) {
-      document.body.innerHTML = `<p style="padding:40px;text-align:center;">❌ ไม่พบข้อมูลรีวิว</p>`;
-      return;
+  // ✅ โหลดรีวิวจาก Backend
+  const loadReview = async () => {
+    try {
+      const res = await fetch(`${API_REVIEW}/${reviewId}`);
+      const review = await res.json();
+      renderReview(review);
+      await loadComments();
+    } catch (err) {
+      document.body.innerHTML = `<p style="padding:40px;text-align:center;color:red;">❌ ${err.message}</p>`;
     }
+  };
 
-    renderReview(review);
-    renderComments();
+  document.addEventListener("DOMContentLoaded", async () => {
+    await loadReview();
 
-    document.addEventListener("click", (e) => {
+    document.addEventListener("click", async (e) => {
       if (e.target.id === "submitComment") {
         const input = qs("#commentInput");
-        if (!input) return;
-        const text = input.value.trim();
+        const text = input?.value.trim();
         if (text) {
-          addComment(text);
+          await addComment(text);
           input.value = "";
         }
       }
     });
-  };
-
-  document.addEventListener("DOMContentLoaded", init);
+  });
 })();

@@ -5,6 +5,7 @@ import com.example.demo.models.User;
 import com.example.demo.repo.ReviewRepository;
 import com.example.demo.repo.UserRepository;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -50,5 +51,10 @@ public class ReviewService {
     // ✅ ดึงรีวิวเฉพาะของผู้ใช้ (โดยใช้ reviewer_username)
     public List<Review> getReviewsByUser(String username) {
         return reviewRepository.findByReviewerUsername(username);
+    }
+
+    // ✅ ดึงรีวิวรายตัวตาม ID (สำหรับหน้า review-detail.html)
+    public Review getReviewById(Long id) {
+        return reviewRepository.findById(id).orElse(null);
     }
 }

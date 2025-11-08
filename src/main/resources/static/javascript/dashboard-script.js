@@ -2,12 +2,14 @@
   const qs = (sel, el = document) => el.querySelector(sel);
   const qsa = (sel, el = document) => [...el.querySelectorAll(sel)];
 
+  // ✅ แปลงวันที่ให้อ่านง่าย
   const formatDate = (ts) => {
     if (!ts) return '-';
     const d = new Date(ts);
     return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
+  // ✅ escape HTML ป้องกัน XSS
   const escapeHTML = (s = '') =>
     s.replace(/[&<>"']/g, (m) =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])
@@ -19,7 +21,7 @@
     reviews: []
   };
 
-  // ✅ โหลดข้อมูลจาก Database ผ่าน API
+  // ✅ โหลดข้อมูลรีวิวทั้งหมดจากฐานข้อมูล
   async function fetchReviewsFromDB() {
     try {
       const res = await fetch('/api/reviews/all');
@@ -34,7 +36,7 @@
     }
   }
 
-  // ✅ ฟังก์ชันกรอง
+  // ✅ ฟังก์ชันกรองข้อมูล
   function matchFilter(r) {
     const q = state.q.trim().toLowerCase();
     const passQ =
@@ -51,10 +53,11 @@
     if (b) b.textContent = `${n} review${n === 1 ? '' : 's'}`;
   }
 
-  // ✅ ฟังก์ชันสร้างการ์ดรีวิว
+  // ✅ สร้างการ์ดแต่ละรีวิว
   function renderCard(r) {
     const wrap = document.createElement('article');
     wrap.className = 'card';
+    wrap.dataset.id = r.id;
 
     const name = escapeHTML(r.course || 'Unknown course');
     const stars = '⭐'.repeat(+r.rating || 0);
@@ -62,15 +65,12 @@
     const body = escapeHTML(r.comment || '— ไม่มีข้อความรีวิว —');
     const metaRight = `${formatDate(r.createdAt)}`;
 
-    // ✅ ตรวจสอบว่า anonymous หรือไม่
     const isAnon = !!r.anonymous;
 
-    // ✅ ใช้ avatar จากฐานข้อมูล ถ้าไม่มีให้ใช้ Anonymous
     const avatarSrc = isAnon
       ? "/Avatar/Anonymous.png"
       : escapeHTML(r.avatar || "/Avatar/Anonymous.png");
 
-    // ✅ การ์ดแสดงผล (ไม่โชว์ชื่อจริง)
     wrap.innerHTML = `
       <header class="card__head">
         <div>
@@ -93,10 +93,21 @@
       </footer>
     `;
 
+    // ✅ คลิกเพื่อเปิดหน้า detail
+    wrap.addEventListener('click', () => {
+      const id = r.id;
+      if (id) {
+        // ✅ ใช้ controller path ไม่ต้องมี .html
+        window.location.href = `/dashboard/review-detail?id=${id}`;
+      } else {
+        console.warn("⚠️ Review ไม่มี ID, ไม่สามารถเปิดหน้า detail ได้");
+      }
+    });
+
     return wrap;
   }
 
-  // ✅ แสดงผลรีวิวทั้งหมด
+  // ✅ แสดงผลทั้งหมดในกริด
   function renderGrid() {
     const grid = qs('#reviewGrid');
     grid.innerHTML = '';
@@ -116,7 +127,7 @@
     filtered.forEach((r) => grid.appendChild(renderCard(r)));
   }
 
-  // ✅ จัดการ input / filter ดาว
+  // ✅ ผูก event การค้นหาและกรองดาว
   function bindHandlers() {
     const s = qs('#searchInput');
     if (s) {
@@ -150,7 +161,7 @@
     }
   }
 
-  // ✅ เริ่มต้นทำงาน
+  // ✅ เริ่มต้นการทำงาน
   document.addEventListener('DOMContentLoaded', () => {
     bindHandlers();
     fetchReviewsFromDB();
