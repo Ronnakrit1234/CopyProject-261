@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@CrossOrigin(origins = "http://localhost:9090") // ✅ ไม่ใช้ cookie แล้ว
+@CrossOrigin(origins = "http://localhost:9090") // ✅ อนุญาตให้ frontend เข้าถึง
 @RestController
 @RequestMapping("/api/reviews")
 public class ReviewController {
@@ -90,6 +90,40 @@ public class ReviewController {
             System.err.println("❌ ERROR fetching review by ID: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("❌ เกิดข้อผิดพลาดขณะดึงข้อมูลรีวิว: " + e.getMessage());
+        }
+    }
+
+    // ✅ PUT /api/reviews/{id}/feedback?type=helpful หรือ notHelpful
+    @PutMapping("/{id}/feedback")
+    public ResponseEntity<?> updateFeedback(
+            @PathVariable Long id,
+            @RequestParam String type
+    ) {
+        try {
+            Review review = reviewService.getReviewById(id);
+            if (review == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("❌ ไม่พบรีวิวที่ต้องการอัปเดต");
+            }
+
+            // ✅ อัปเดตตามประเภท feedback
+            if ("helpful".equalsIgnoreCase(type)) {
+                review.setHelpfulCount(review.getHelpfulCount() + 1);
+            } else if ("notHelpful".equalsIgnoreCase(type)) {
+                review.setNotHelpfulCount(review.getNotHelpfulCount() + 1);
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("⚠️ ค่าของ type ต้องเป็น helpful หรือ notHelpful เท่านั้น");
+            }
+
+            Review updated = reviewService.saveReviewRaw(review); // ✅ save โดยไม่ต้องใช้ username
+            System.out.println("👍 Updated feedback for review " + id + ": " + type);
+            return ResponseEntity.ok(updated);
+
+        } catch (Exception e) {
+            System.err.println("❌ ERROR updating feedback: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("❌ เกิดข้อผิดพลาดในการอัปเดต feedback: " + e.getMessage());
         }
     }
 }

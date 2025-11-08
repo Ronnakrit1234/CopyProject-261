@@ -13,9 +13,16 @@ public class Comment {
 
     private Long reviewId;     // 🧩 ผูกกับ Review
     private Long userId;       // ✅ FK ถึง user.id
-    private String studentId;  // ✅ เพิ่มฟิลด์ใหม่ไว้เก็บเลขนักศึกษา
-    private String text;
-    private String author = "Anonymous";
+
+    @Column(columnDefinition = "NVARCHAR(50)")
+    private String studentId;  // ✅ เก็บเลขนักศึกษา (เช่น 6709xxxxxxx)
+
+    @Column(columnDefinition = "NVARCHAR(1000)")
+    private String text;       // ✅ เก็บข้อความรีวิว (รองรับภาษาไทย)
+
+    @Column(columnDefinition = "NVARCHAR(255)")
+    private String author = "Anonymous"; // ✅ ชื่อผู้คอมเมนต์ (แสดงในหน้าเว็บเป็น Anonymous)
+
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public Comment() {}

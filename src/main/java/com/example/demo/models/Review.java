@@ -23,6 +23,13 @@ public class Review {
     @Column(columnDefinition = "NVARCHAR(500)")
     private String comment;
 
+    // ✅ ใช้ Integer + default = 0 (กัน null ใน DB)
+    @Column(nullable = false, columnDefinition = "INT DEFAULT 0")
+    private Integer helpfulCount = 0;
+
+    @Column(nullable = false, columnDefinition = "INT DEFAULT 0")
+    private Integer notHelpfulCount = 0;
+
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(columnDefinition = "NVARCHAR(255)")
@@ -33,8 +40,6 @@ public class Review {
 
     private boolean anonymous; // ✅ โหมด anonymous
 
-    // ❌ ลบความสัมพันธ์กับ User เพราะไม่มี user_id แล้ว
-    // ✅ ใช้ Transient เพื่อให้ Spring Boot ไม่ map กับ database
     @Transient
     @JsonIgnore
     private User author;
@@ -57,6 +62,20 @@ public class Review {
 
     public String getComment() { return comment; }
     public void setComment(String comment) { this.comment = comment; }
+
+    public Integer getHelpfulCount() {
+        return helpfulCount != null ? helpfulCount : 0;
+    }
+    public void setHelpfulCount(Integer helpfulCount) {
+        this.helpfulCount = helpfulCount != null ? helpfulCount : 0;
+    }
+
+    public Integer getNotHelpfulCount() {
+        return notHelpfulCount != null ? notHelpfulCount : 0;
+    }
+    public void setNotHelpfulCount(Integer notHelpfulCount) {
+        this.notHelpfulCount = notHelpfulCount != null ? notHelpfulCount : 0;
+    }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

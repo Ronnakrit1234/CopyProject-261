@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
-    // ✅ ดึงรีวิวทั้งหมดของผู้ใช้ตาม username
+
+    // ✅ ดึงรีวิวทั้งหมดของนักศึกษาคนหนึ่ง
     List<Review> findByReviewerUsername(String reviewerUsername);
 }

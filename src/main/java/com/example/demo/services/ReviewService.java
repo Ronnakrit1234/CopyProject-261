@@ -43,6 +43,11 @@ public class ReviewService {
         return reviewRepository.save(review);
     }
 
+    // ✅ สำหรับอัปเดต review โดยตรง (ใช้ในระบบ feedback)
+    public Review saveReviewRaw(Review review) {
+        return reviewRepository.save(review);
+    }
+
     // ✅ ดึงรีวิวทั้งหมด (สำหรับ Dashboard)
     public List<Review> getAllReviews() {
         return reviewRepository.findAll();
@@ -56,5 +61,23 @@ public class ReviewService {
     // ✅ ดึงรีวิวรายตัวตาม ID (สำหรับหน้า review-detail.html)
     public Review getReviewById(Long id) {
         return reviewRepository.findById(id).orElse(null);
+    }
+
+    // ✅ เพิ่มฟังก์ชันอัปเดต Feedback (เพิ่ม helpful / notHelpful)
+    public Review updateFeedback(Long reviewId, String type) {
+        Review review = getReviewById(reviewId);
+        if (review == null) {
+            throw new RuntimeException("Review not found");
+        }
+
+        if ("helpful".equalsIgnoreCase(type)) {
+            review.setHelpfulCount(review.getHelpfulCount() + 1);
+        } else if ("notHelpful".equalsIgnoreCase(type)) {
+            review.setNotHelpfulCount(review.getNotHelpfulCount() + 1);
+        } else {
+            throw new RuntimeException("Invalid feedback type");
+        }
+
+        return reviewRepository.save(review);
     }
 }

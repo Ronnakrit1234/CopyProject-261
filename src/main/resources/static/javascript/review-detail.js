@@ -1,4 +1,4 @@
-// review-detail.js (Spring Boot-ready + บันทึก comment ลง DB พร้อม username ที่ซ่อนใน frontend)
+// review-detail.js (Spring Boot-ready + Feedback + Comment System)
 (() => {
   const API_REVIEW = "http://localhost:9090/api/reviews";
   const API_COMMENT = "http://localhost:9090/api/comments";
@@ -13,8 +13,11 @@
     return;
   }
 
+  let currentReview = null; // 🔹 เก็บข้อมูลรีวิวปัจจุบันไว้สำหรับอัปเดตปุ่ม
+
   // ✅ ฟังก์ชันแสดงข้อมูลรีวิว
   const renderReview = (review) => {
+    currentReview = review;
     const container = qs(".frame-box-detail");
     if (!container) return;
 
@@ -31,8 +34,8 @@
             <p class="review-text">${review.comment}</p>
 
             <div class="footer-buttons">
-              <button>💬 Helpful (${review.helpfulCount || 0})</button>
-              <button>🙃 Not Helpful (${review.notHelpfulCount || 0})</button>
+              <button id="btnHelpful">💬 Helpful (${review.helpfulCount || 0})</button>
+              <button id="btnNotHelpful">🙃 Not Helpful (${review.notHelpfulCount || 0})</button>
             </div>
           </div>
 
@@ -96,7 +99,8 @@
     if (!text.trim()) return;
 
     // ดึง username จาก localStorage (หลัง login)
-    const username = localStorage.getItem("username");
+    const studentData = JSON.parse(localStorage.getItem("studentData") || "{}");
+    const username = studentData.username;
     if (!username) {
       alert("⚠️ กรุณาเข้าสู่ระบบก่อนแสดงความคิดเห็น");
       return;
@@ -105,7 +109,7 @@
     const comment = {
       reviewId: Number(reviewId),
       text,
-      author: "Anonymous" // ✅ หน้าเว็บเห็นเป็น Anonymous เสมอ
+      author: "Anonymous", // ✅ หน้าเว็บเห็นเป็น Anonymous เสมอ
     };
 
     try {
@@ -114,7 +118,7 @@
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(comment)
+          body: JSON.stringify(comment),
         }
       );
 
@@ -126,6 +130,26 @@
     }
   };
 
+  // ✅ อัปเดต Feedback (กด Helpful / Not Helpful)
+  const sendFeedback = async (type) => {
+    try {
+      const res = await fetch(
+        `${API_REVIEW}/${reviewId}/feedback?type=${type}`,
+        { method: "PUT" }
+      );
+      if (!res.ok) throw new Error("อัปเดต feedback ไม่สำเร็จ");
+
+      const updated = await res.json();
+      currentReview = updated; // 🔁 อัปเดตค่าปัจจุบัน
+      renderReview(updated);
+      await loadComments();
+      bindButtons(); // ✅ re-bind event หลัง re-render
+    } catch (err) {
+      console.error("❌ Feedback update failed:", err);
+      alert("เกิดข้อผิดพลาดในการอัปเดต Feedback");
+    }
+  };
+
   // ✅ โหลดรีวิวจาก Backend
   const loadReview = async () => {
     try {
@@ -134,26 +158,34 @@
       const review = await res.json();
       renderReview(review);
       await loadComments();
+      bindButtons(); // ✅ bind ปุ่มหลังโหลด
     } catch (err) {
       document.body.innerHTML = `<p style="padding:40px;text-align:center;color:red;">❌ ${err.message}</p>`;
       console.error(err);
     }
   };
 
-  // ✅ เริ่มต้นเมื่อหน้าโหลดเสร็จ
-  document.addEventListener("DOMContentLoaded", async () => {
-    await loadReview();
+  // ✅ จัดการ event ของปุ่ม
+  const bindButtons = () => {
+    const btnHelpful = qs("#btnHelpful");
+    const btnNotHelpful = qs("#btnNotHelpful");
+    const btnSubmit = qs("#submitComment");
 
-    // เมื่อกด submit comment
-    document.addEventListener("click", async (e) => {
-      if (e.target.id === "submitComment") {
+    if (btnHelpful)
+      btnHelpful.addEventListener("click", () => sendFeedback("helpful"));
+    if (btnNotHelpful)
+      btnNotHelpful.addEventListener("click", () => sendFeedback("notHelpful"));
+    if (btnSubmit)
+      btnSubmit.addEventListener("click", async () => {
         const input = qs("#commentInput");
         const text = input?.value.trim();
         if (text) {
           await addComment(text);
           input.value = "";
         }
-      }
-    });
-  });
+      });
+  };
+
+  // ✅ เริ่มต้นเมื่อหน้าโหลดเสร็จ
+  document.addEventListener("DOMContentLoaded", loadReview);
 })();
