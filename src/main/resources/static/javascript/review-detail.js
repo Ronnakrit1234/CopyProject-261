@@ -1,9 +1,10 @@
-// review-detail.js (Spring Boot-ready + comment เก็บใน DB)
+// review-detail.js (Spring Boot-ready + บันทึก comment ลง DB พร้อม username ที่ซ่อนใน frontend)
 (() => {
   const API_REVIEW = "http://localhost:9090/api/reviews";
   const API_COMMENT = "http://localhost:9090/api/comments";
   const qs = (sel, el = document) => el.querySelector(sel);
 
+  // ✅ อ่านค่า id จาก URL เช่น ?id=3
   const params = new URLSearchParams(window.location.search);
   const reviewId = params.get("id");
 
@@ -12,7 +13,7 @@
     return;
   }
 
-  // ✅ แสดงข้อมูลรีวิว
+  // ✅ ฟังก์ชันแสดงข้อมูลรีวิว
   const renderReview = (review) => {
     const container = qs(".frame-box-detail");
     if (!container) return;
@@ -56,6 +57,7 @@
 
     try {
       const res = await fetch(`${API_COMMENT}/${reviewId}`);
+      if (!res.ok) throw new Error("โหลดคอมเมนต์ล้มเหลว");
       const comments = await res.json();
 
       listEl.innerHTML = "";
@@ -93,18 +95,28 @@
   const addComment = async (text) => {
     if (!text.trim()) return;
 
+    // ดึง username จาก localStorage (หลัง login)
+    const username = localStorage.getItem("username");
+    if (!username) {
+      alert("⚠️ กรุณาเข้าสู่ระบบก่อนแสดงความคิดเห็น");
+      return;
+    }
+
     const comment = {
       reviewId: Number(reviewId),
       text,
-      author: "Anonymous"
+      author: "Anonymous" // ✅ หน้าเว็บเห็นเป็น Anonymous เสมอ
     };
 
     try {
-      const res = await fetch(API_COMMENT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(comment)
-      });
+      const res = await fetch(
+        `${API_COMMENT}?username=${encodeURIComponent(username)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(comment)
+        }
+      );
 
       if (!res.ok) throw new Error("บันทึกคอมเมนต์ไม่สำเร็จ");
       await loadComments();
@@ -118,17 +130,21 @@
   const loadReview = async () => {
     try {
       const res = await fetch(`${API_REVIEW}/${reviewId}`);
+      if (!res.ok) throw new Error("ไม่สามารถโหลดรีวิวได้");
       const review = await res.json();
       renderReview(review);
       await loadComments();
     } catch (err) {
       document.body.innerHTML = `<p style="padding:40px;text-align:center;color:red;">❌ ${err.message}</p>`;
+      console.error(err);
     }
   };
 
+  // ✅ เริ่มต้นเมื่อหน้าโหลดเสร็จ
   document.addEventListener("DOMContentLoaded", async () => {
     await loadReview();
 
+    // เมื่อกด submit comment
     document.addEventListener("click", async (e) => {
       if (e.target.id === "submitComment") {
         const input = qs("#commentInput");
