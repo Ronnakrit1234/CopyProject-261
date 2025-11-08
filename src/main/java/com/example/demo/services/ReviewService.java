@@ -26,7 +26,7 @@ public class ReviewService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // ✅ เก็บ username ของผู้รีวิว (ไม่ต้องอ้าง FK user_id แล้ว)
+        // ✅ เก็บ username ของผู้รีวิว
         review.setReviewerUsername(user.getUsername());
         review.setCreatedAt(LocalDateTime.now());
 
@@ -35,16 +35,16 @@ public class ReviewService {
             review.setAvatar("/Avatar/Anonymous.png");
         }
 
-        // ✅ โหมด Anonymous (ไม่โชว์ชื่อ แต่ DB จะรู้ว่าใครเป็นเจ้าของ)
+        // ✅ Anonymous Mode
         if (review.isAnonymous()) {
-            // ไม่ต้องลบ reviewerUsername เพราะใช้สำหรับตรวจสอบหลังบ้านได้
+            // ไม่ต้องลบ reviewerUsername เพราะยังใช้ตรวจสอบหลังบ้านได้
         }
 
         return reviewRepository.save(review);
     }
 
-    // ✅ สำหรับอัปเดต review โดยตรง (ใช้ในระบบ feedback)
-    public Review saveReviewRaw(Review review) {
+    // ✅ สำหรับบันทึกโดยไม่ต้องมี username (ใช้ในระบบ feedback)
+    public Review save(Review review) {
         return reviewRepository.save(review);
     }
 
@@ -53,27 +53,42 @@ public class ReviewService {
         return reviewRepository.findAll();
     }
 
-    // ✅ ดึงรีวิวเฉพาะของผู้ใช้ (โดยใช้ reviewer_username)
+    // ✅ ดึงรีวิวของผู้ใช้คนเดียว
     public List<Review> getReviewsByUser(String username) {
         return reviewRepository.findByReviewerUsername(username);
     }
 
-    // ✅ ดึงรีวิวรายตัวตาม ID (สำหรับหน้า review-detail.html)
+    // ✅ ดึงรีวิวตาม ID
     public Review getReviewById(Long id) {
         return reviewRepository.findById(id).orElse(null);
     }
 
-    // ✅ เพิ่มฟังก์ชันอัปเดต Feedback (เพิ่ม helpful / notHelpful)
-    public Review updateFeedback(Long reviewId, String type) {
+    // ✅ เพิ่มฟังก์ชันอัปเดต Feedback แบบ toggle
+    public Review updateFeedback(Long reviewId, String type, String action) {
         Review review = getReviewById(reviewId);
         if (review == null) {
             throw new RuntimeException("Review not found");
         }
 
+        // 🎯 Logic toggle feedback
         if ("helpful".equalsIgnoreCase(type)) {
-            review.setHelpfulCount(review.getHelpfulCount() + 1);
+            switch (action) {
+                case "helpful" -> review.setHelpfulCount(review.getHelpfulCount() + 1);
+                case "cancel" -> review.setHelpfulCount(Math.max(0, review.getHelpfulCount() - 1));
+                case "notHelpful" -> {
+                    review.setHelpfulCount(Math.max(0, review.getHelpfulCount() - 1));
+                    review.setNotHelpfulCount(review.getNotHelpfulCount() + 1);
+                }
+            }
         } else if ("notHelpful".equalsIgnoreCase(type)) {
-            review.setNotHelpfulCount(review.getNotHelpfulCount() + 1);
+            switch (action) {
+                case "notHelpful" -> review.setNotHelpfulCount(review.getNotHelpfulCount() + 1);
+                case "cancel" -> review.setNotHelpfulCount(Math.max(0, review.getNotHelpfulCount() - 1));
+                case "helpful" -> {
+                    review.setNotHelpfulCount(Math.max(0, review.getNotHelpfulCount() - 1));
+                    review.setHelpfulCount(review.getHelpfulCount() + 1);
+                }
+            }
         } else {
             throw new RuntimeException("Invalid feedback type");
         }

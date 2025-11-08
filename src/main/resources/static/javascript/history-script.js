@@ -24,34 +24,54 @@
     });
   };
 
-  // ✅ ฟังก์ชันอัปเดต Feedback (กด Helpful / Not Helpful)
+  // ✅ จัดการสถานะ feedback ที่เคยกดไว้ (เก็บใน localStorage)
+  const FEEDBACK_KEY = "reviewFeedback";
+  const loadFeedbackState = () =>
+    JSON.parse(localStorage.getItem(FEEDBACK_KEY) || "{}");
+  const saveFeedbackState = (state) =>
+    localStorage.setItem(FEEDBACK_KEY, JSON.stringify(state));
+
+  // ✅ ส่ง Feedback ไป backend + อัปเดตสถานะใน localStorage
   async function sendFeedback(reviewId, type, buttonEl) {
+    const feedbackState = loadFeedbackState();
+    const current = feedbackState[reviewId]; // helpful / notHelpful / undefined
+    let action = "none";
+
+    // ✅ Logic toggle:
+    if (current === type) {
+      delete feedbackState[reviewId];
+      action = "cancel"; // ยกเลิก
+    } else {
+      feedbackState[reviewId] = type;
+      action = type; // เพิ่มฝั่งนี้
+    }
+    saveFeedbackState(feedbackState);
+
     try {
-      const res = await fetch(`${API_BASE}/${reviewId}/feedback?type=${type}`, {
-        method: "PUT",
-      });
+      const res = await fetch(
+        `${API_BASE}/${reviewId}/feedback?type=${type}&action=${action}`,
+        { method: "PUT" }
+      );
       if (!res.ok) throw new Error("อัปเดต feedback ไม่สำเร็จ");
 
       const updated = await res.json();
 
-      // ✅ อัปเดตตัวเลขในปุ่มแบบสด
-      if (type === "helpful") {
-        buttonEl.textContent = `😊 Helpful (${updated.helpfulCount || 0})`;
-        const notBtn = buttonEl
-          .closest(".footer-buttons")
-          .querySelector(".btn-unhelpful");
-        if (notBtn)
-          notBtn.textContent = `🙃 Not Helpful (${
-            updated.notHelpfulCount || 0
-          })`;
-      } else {
-        buttonEl.textContent = `🙃 Not Helpful (${updated.notHelpfulCount || 0})`;
-        const helpBtn = buttonEl
-          .closest(".footer-buttons")
-          .querySelector(".btn-helpful");
-        if (helpBtn)
-          helpBtn.textContent = `😊 Helpful (${updated.helpfulCount || 0})`;
-      }
+      const buttons = buttonEl.closest(".footer-buttons");
+      const helpBtn = buttons.querySelector(".btn-helpful");
+      const unhelpBtn = buttons.querySelector(".btn-unhelpful");
+
+      helpBtn.textContent = `😊 Helpful (${updated.helpfulCount || 0})`;
+      unhelpBtn.textContent = `🙃 Not Helpful (${updated.notHelpfulCount || 0})`;
+
+      // ✅ ปรับ highlight
+      helpBtn.classList.toggle(
+        "active",
+        feedbackState[reviewId] === "helpful"
+      );
+      unhelpBtn.classList.toggle(
+        "active",
+        feedbackState[reviewId] === "notHelpful"
+      );
     } catch (err) {
       console.error("❌ Feedback update failed:", err);
       alert("เกิดข้อผิดพลาดในการอัปเดต Feedback");
@@ -72,10 +92,10 @@
         return;
       }
 
-      // ✅ เรียงจากใหม่ → เก่า
       reviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-      // ✅ แสดงการ์ดแต่ละรีวิว
+      const feedbackState = loadFeedbackState();
+
       historyList.innerHTML = reviews
         .map(
           (r) => `
@@ -96,12 +116,12 @@
               &nbsp;&nbsp; Review ID : <strong>${r.id}</strong>
             </div>
             <div class="footer-buttons">
-              <button class="btn-helpful">😊 Helpful (${
-                r.helpfulCount || 0
-              })</button>
-              <button class="btn-unhelpful">🙃 Not Helpful (${
-                r.notHelpfulCount || 0
-              })</button>
+              <button class="btn-helpful ${
+                feedbackState[r.id] === "helpful" ? "active" : ""
+              }">😊 Helpful (${r.helpfulCount || 0})</button>
+              <button class="btn-unhelpful ${
+                feedbackState[r.id] === "notHelpful" ? "active" : ""
+              }">🙃 Not Helpful (${r.notHelpfulCount || 0})</button>
             </div>
           </div>
         </div>
@@ -109,33 +129,26 @@
         )
         .join("");
 
-      // ✅ เพิ่ม event listener ให้แต่ละการ์ด
+      // ✅ Event
       historyList.querySelectorAll(".history-card").forEach((card) => {
         const reviewId = card.dataset.id;
-
-        // 🎯 คลิกเพื่อเปิดหน้า review-detail
-        card.addEventListener("click", (e) => {
-          if (e.target.closest("button")) return; // กันคลิกปุ่มช่วยเหลือ
-          if (reviewId) {
-            window.location.href = `/dashboard/review-detail?id=${reviewId}`;
-          }
-        });
-
-        // 🎯 ปุ่ม feedback
         const btnHelpful = card.querySelector(".btn-helpful");
         const btnUnhelpful = card.querySelector(".btn-unhelpful");
 
-        if (btnHelpful)
-          btnHelpful.addEventListener("click", (e) => {
-            e.stopPropagation();
-            sendFeedback(reviewId, "helpful", btnHelpful);
-          });
+        card.addEventListener("click", (e) => {
+          if (e.target.closest("button")) return;
+          window.location.href = `/dashboard/review-detail?id=${reviewId}`;
+        });
 
-        if (btnUnhelpful)
-          btnUnhelpful.addEventListener("click", (e) => {
-            e.stopPropagation();
-            sendFeedback(reviewId, "notHelpful", btnUnhelpful);
-          });
+        btnHelpful.addEventListener("click", (e) => {
+          e.stopPropagation();
+          sendFeedback(reviewId, "helpful", btnHelpful);
+        });
+
+        btnUnhelpful.addEventListener("click", (e) => {
+          e.stopPropagation();
+          sendFeedback(reviewId, "notHelpful", btnUnhelpful);
+        });
       });
     } catch (err) {
       console.error("❌ โหลดประวัติรีวิวล้มเหลว:", err);
@@ -143,6 +156,5 @@
     }
   }
 
-  // ✅ เริ่มทำงาน
   document.addEventListener("DOMContentLoaded", loadHistory);
 })();

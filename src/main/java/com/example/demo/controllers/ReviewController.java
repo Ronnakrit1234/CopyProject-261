@@ -93,12 +93,12 @@ public class ReviewController {
         }
     }
 
-    // ✅ PUT /api/reviews/{id}/feedback?type=helpful หรือ notHelpful
+    // ✅ PUT /api/reviews/{id}/feedback?type=helpful&action=cancel|helpful|notHelpful
     @PutMapping("/{id}/feedback")
     public ResponseEntity<?> updateFeedback(
             @PathVariable Long id,
-            @RequestParam String type
-    ) {
+            @RequestParam String type,
+            @RequestParam(required = false, defaultValue = "none") String action) { // ✅ ป้องกัน error ถ้าไม่ได้ส่ง action
         try {
             Review review = reviewService.getReviewById(id);
             if (review == null) {
@@ -106,18 +106,35 @@ public class ReviewController {
                         .body("❌ ไม่พบรีวิวที่ต้องการอัปเดต");
             }
 
-            // ✅ อัปเดตตามประเภท feedback
+            // ✅ Toggle feedback logic (กดซ้ำ = ยกเลิก, กดอีกฝั่ง = สลับ)
             if ("helpful".equalsIgnoreCase(type)) {
-                review.setHelpfulCount(review.getHelpfulCount() + 1);
+                switch (action) {
+                    case "helpful" -> review.setHelpfulCount(review.getHelpfulCount() + 1);
+                    case "cancel" -> review.setHelpfulCount(Math.max(0, review.getHelpfulCount() - 1));
+                    case "notHelpful" -> {
+                        review.setHelpfulCount(Math.max(0, review.getHelpfulCount() - 1));
+                        review.setNotHelpfulCount(review.getNotHelpfulCount() + 1);
+                    }
+                    default -> System.out.println("⚠️ Unknown action: " + action);
+                }
             } else if ("notHelpful".equalsIgnoreCase(type)) {
-                review.setNotHelpfulCount(review.getNotHelpfulCount() + 1);
+                switch (action) {
+                    case "notHelpful" -> review.setNotHelpfulCount(review.getNotHelpfulCount() + 1);
+                    case "cancel" -> review.setNotHelpfulCount(Math.max(0, review.getNotHelpfulCount() - 1));
+                    case "helpful" -> {
+                        review.setNotHelpfulCount(Math.max(0, review.getNotHelpfulCount() - 1));
+                        review.setHelpfulCount(review.getHelpfulCount() + 1);
+                    }
+                    default -> System.out.println("⚠️ Unknown action: " + action);
+                }
             } else {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("⚠️ ค่าของ type ต้องเป็น helpful หรือ notHelpful เท่านั้น");
             }
 
-            Review updated = reviewService.saveReviewRaw(review); // ✅ save โดยไม่ต้องใช้ username
-            System.out.println("👍 Updated feedback for review " + id + ": " + type);
+            // ✅ บันทึกผลการอัปเดต
+            Review updated = reviewService.save(review);
+            System.out.println("👍 Updated feedback for review " + id + ": " + type + " (" + action + ")");
             return ResponseEntity.ok(updated);
 
         } catch (Exception e) {
