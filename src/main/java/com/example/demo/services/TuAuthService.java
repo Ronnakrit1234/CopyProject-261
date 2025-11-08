@@ -1,13 +1,14 @@
 package com.example.demo.services;
 
 import com.example.demo.models.User;
-import com.example.demo.repo.UserProfileRepository;
+import com.example.demo.repo.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.*;
 
 @Service
@@ -19,21 +20,19 @@ public class TuAuthService {
     @Value("${tu.api.url}")
     private String apiUrl;
 
-    private final UserProfileRepository userProfileRepository;
+    private final UserRepository userRepository;
 
-    public TuAuthService(UserProfileRepository userProfileRepository) {
-        this.userProfileRepository = userProfileRepository;
+    public TuAuthService(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
     public ResponseEntity<Object> verifyUser(String username, String password) {
         RestTemplate restTemplate = new RestTemplate();
 
-        // Headers
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Application-Key", applicationKey);
 
-        // Body
         Map<String, String> body = new HashMap<>();
         body.put("UserName", username);
         body.put("PassWord", password);
@@ -46,7 +45,6 @@ public class TuAuthService {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode json = mapper.readTree(response.getBody());
 
-            // ✅ Login success → Save to DB
             if (json.has("status") && json.get("status").asBoolean()) {
                 saveOrUpdateProfile(json);
                 return ResponseEntity.ok(Map.of(
@@ -57,7 +55,7 @@ public class TuAuthService {
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                         "status", false,
-                        "message", "Invalid credentials or not found",
+                        "message", "Invalid credentials",
                         "response", json
                 ));
             }
@@ -70,16 +68,16 @@ public class TuAuthService {
 
     private void saveOrUpdateProfile(JsonNode json) {
         String username = json.get("username").asText();
-        Optional<User> optional = userProfileRepository.findByUsername(username);
+        Optional<User> optional = userRepository.findByUsername(username); // ✅ ใช้ Optional จาก repo
 
         User profile = optional.orElse(new User());
         profile.setUsername(username);
-        profile.setDisplayName(json.path("displayname_th").asText()); // ใช้ชื่อไทยเป็น displayName
+        profile.setDisplayName(json.path("displayname_th").asText());
         profile.setEmail(json.path("email").asText());
         profile.setFaculty(json.path("faculty").asText());
         profile.setDepartment(json.path("department").asText());
         profile.setLastLogin(java.time.LocalDateTime.now());
 
-        userProfileRepository.save(profile);
+        userRepository.save(profile);
     }
 }

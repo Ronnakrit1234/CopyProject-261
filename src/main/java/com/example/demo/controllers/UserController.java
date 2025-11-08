@@ -2,6 +2,9 @@ package com.example.demo.controllers;
 
 import com.example.demo.models.User;
 import com.example.demo.repo.UserRepository;
+
+import java.util.Optional;
+
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,7 +22,7 @@ public class UserController {
     }
 
     @GetMapping("/{username}")
-    public User getUser(@PathVariable String username) {
+    public Optional<User> getUser(@PathVariable String username) {
         return repo.findByUsername(username);
     }
 }
