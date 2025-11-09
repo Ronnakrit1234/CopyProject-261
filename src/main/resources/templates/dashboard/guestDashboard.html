@@ -26,6 +26,10 @@
       border-color: rgba(255,200,0,.4);
       box-shadow: 0 10px 30px rgba(255,200,0,.15);
     }
+	
+	#loginBtnSidebar{
+		color: aliceblue;
+	}
   </style>
 </head>
 <body class="page theme-dark">
@@ -34,7 +38,7 @@
     <div class="sidebar__section">
       <!-- โลโก้พาไปหน้า login (เหมาะกับ guest) -->
       <a href="/" class="logo logo--img" aria-label="CSTU Pantip">
-        <img src="/src/dasboardSource/panthip.png" alt="CSTU Pantip logo" class="brand-img">
+		<img src="/source/panthip.png" alt="CSTU Pantip logo" class="brand-img">
       </a>
 
       <nav class="nav" aria-label="Sidebar">
@@ -54,7 +58,7 @@
     </div>
 
     <div class="sidebar__section">
-      <div class="avatar"><span class="avatar__icon">👤</span></div>
+      
       <a class="logout" href="/" id="loginBtnSidebar">Log-in</a>
     </div>
   </aside>
@@ -102,7 +106,8 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="/javascript/dashboard-script.js"></script>
+  <script src="/javascript/guest-dashboard.js"></script>
+
   <script>
     // ใช้ logic แสดงรีวิว/ค้นหาเหมือนเดิม แต่บังคับเป็นโหมด guest
     try { sessionStorage.setItem('isAdmin', 'false'); } catch (e) {}
