@@ -6,13 +6,23 @@
   const formatDate = (ts) => {
     if (!ts) return '-';
     const d = new Date(ts);
-    return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+    return d.toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   // ✅ escape HTML ป้องกัน XSS
   const escapeHTML = (s = '') =>
     s.replace(/[&<>"']/g, (m) =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])
+      ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[m])
     );
 
   const state = {
@@ -66,10 +76,9 @@
     const metaRight = `${formatDate(r.createdAt)}`;
 
     const isAnon = !!r.anonymous;
-
     const avatarSrc = isAnon
-      ? "/Avatar/Anonymous.png"
-      : escapeHTML(r.avatar || "/Avatar/Anonymous.png");
+      ? '/Avatar/Anonymous.png'
+      : escapeHTML(r.avatar || '/Avatar/Anonymous.png');
 
     wrap.innerHTML = `
       <header class="card__head">
@@ -87,7 +96,7 @@
       <footer class="card__footer">
         <div class="footer-left">
           <img src="${avatarSrc}" alt="avatar" class="card__avatar">
-          ${isAnon ? `<span class="kbd">Anonymous</span>` : ""}
+          ${isAnon ? `<span class="kbd">Anonymous</span>` : ''}
         </div>
         <span class="kbd">${metaRight}</span>
       </footer>
@@ -99,7 +108,7 @@
       if (id) {
         window.location.href = `/dashboard/review-detail?id=${id}`;
       } else {
-        console.warn("⚠️ Review ไม่มี ID, ไม่สามารถเปิดหน้า detail ได้");
+        console.warn('⚠️ Review ไม่มี ID, ไม่สามารถเปิดหน้า detail ได้');
       }
     });
 
@@ -143,7 +152,9 @@
         if (!btn) return;
         if (btn.id === 'clearFilters') {
           state.stars.clear();
-          qsa('.chip[data-star]').forEach((b) => b.classList.remove('is-active'));
+          qsa('.chip[data-star]').forEach((b) =>
+            b.classList.remove('is-active')
+          );
           renderGrid();
           return;
         }
@@ -169,6 +180,8 @@
           localStorage.removeItem('studentData');
           localStorage.removeItem('reviewFeedback');
           localStorage.removeItem('userFeedbackRecords');
+          localStorage.removeItem('cstuRememberCreds');        // ✅ ล้าง Remember Credentials
+          localStorage.setItem('cstuRememberEnabled', 'false'); // ✅ ปิด Auto Login
 
           // ✅ Redirect กลับหน้า Login (index.html)
           window.location.href = '/index.html';

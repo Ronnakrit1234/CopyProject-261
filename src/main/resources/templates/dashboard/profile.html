@@ -98,7 +98,7 @@
       document.querySelector(".info-row:nth-child(3) .value").textContent = "นักศึกษาปัจจุบัน";
       document.querySelector(".info-row:nth-child(4) .value").textContent = "ธรรมศาสตร์ (Thammasat University)";
 
-      // ✅ ปุ่ม Logout
+      // ✅ ปุ่ม Logout (เวอร์ชันใหม่ ปิด Auto Login)
       const logoutBtn = document.getElementById("btnLogout");
       if (logoutBtn) {
         logoutBtn.addEventListener("click", (e) => {
@@ -108,6 +108,8 @@
             localStorage.removeItem("studentData");
             localStorage.removeItem("reviewFeedback");
             localStorage.removeItem("userFeedbackRecords");
+            localStorage.removeItem("cstuRememberCreds");        // ✅ ล้าง Remember Credentials
+            localStorage.setItem("cstuRememberEnabled", "false"); // ✅ ปิด Auto Login
             sessionStorage.removeItem("isAdmin");
 
             // 🔹 กลับไปหน้า Login (index.html)
@@ -116,6 +118,7 @@
         });
       }
     });
+  </script>
   </script>
 </body>
 </html>
